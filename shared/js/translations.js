@@ -14,7 +14,7 @@ const TRANSLATIONS = {
   en: {
 
     /* --- App Titles --- */
-    fieldAppTitle: 'ExpenseFuel — Field',
+    fieldAppTitle: 'ExpenseFuel',
     coordAppTitle: 'ExpenseFuel — Coordinator',
 
     /* --- Navigation --- */
@@ -144,6 +144,7 @@ const TRANSLATIONS = {
     expenseTotal:    'Expense Total',
     fuelTotal:       'Fuel Total',
     kartaTotal:      'Karta Total',
+    grandTotal:      'Grand Total',
     dateRange:       'Date Range',
     fieldMember:     'Field Member',
     trackingNum:     'Tracking #',
@@ -165,7 +166,7 @@ const TRANSLATIONS = {
   ar: {
 
     /* --- App Titles --- */
-    fieldAppTitle: 'ExpenseFuel — الميداني',         /* الميداني */
+    fieldAppTitle: 'ExpenseFuel',
     coordAppTitle: 'ExpenseFuel — المنسق',                      /* المنسق  */
 
     /* --- Navigation --- */
@@ -328,6 +329,7 @@ const TRANSLATIONS = {
     expenseTotal:    'إجمالي المصروفات',
     fuelTotal:       'إجمالي الوقود',
     kartaTotal:      'إجمالي الكارتة',
+    grandTotal:      'الإجمالي الكلي',
     dateRange:       'نطاق التاريخ',
     fieldMember:     'عضو الفريق الميداني',
     trackingNum:     'رقم التتبع',

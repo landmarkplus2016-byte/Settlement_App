@@ -89,11 +89,6 @@ function validateExpenseForm() {
     valid = false;
   }
 
-  if (!_inputVal('fieldJobCode')) {
-    _showError('fieldJobCode', 'errorJobCode');
-    valid = false;
-  }
-
   if (!_selectVal('fieldCategory')) {
     _showError('fieldCategory', 'errorCategory');
     valid = false;

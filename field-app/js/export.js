@@ -60,6 +60,10 @@ function loadExportSummary() {
   _setText('exportFuelTotal',  formatCurrency(fuelTotals.newFuel));
   _setText('exportKartaTotal', formatCurrency(fuelTotals.karta));
 
+  /* ---- Grand total (expenses + fuel + karta) ---- */
+  const grandTotal = expenseTotal + fuelTotals.newFuel + fuelTotals.karta;
+  _setText('exportGrandTotal', formatCurrency(grandTotal));
+
   /* ---- Date range ---- */
   _setText('exportDateRange', _buildDateRange(expenses, fuel));
 

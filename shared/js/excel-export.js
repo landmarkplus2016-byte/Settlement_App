@@ -163,14 +163,14 @@ function _buildExpensesSheet(settings, expenses) {
 
 /* ==========================================================================
    PRIVATE — FUEL SHEET
-   Columns A–S (19 cols, index 0–18):
+   Columns A–T (20 cols, index 0–19):
    (blank), (blank), Project name, Site ID, Job Code,
-   Start KM, End KM, Fuel Amount, Area, Driver, City, Karta Amount,
+   Start KM, End KM, Fuel Amount, Area, Driver, City, Karta Amount, Comment,
    Coordinator, Tracking #, Name, Site Count, Category2, Sub Category, Date
    ========================================================================== */
 
 function _buildFuelSheet(settings, fuel) {
-  const NCOLS    = 19;
+  const NCOLS    = 20;
   const fuelTotal  = fuel.reduce(function (s, e) { return s + (parseFloat(e.fuelAmount)  || 0); }, 0);
   const kartaTotal = fuel.reduce(function (s, e) { return s + (parseFloat(e.kartaAmount) || 0); }, 0);
 
@@ -200,7 +200,7 @@ function _buildFuelSheet(settings, fuel) {
     '', '',
     'Project name', 'Site ID', 'Job Code',
     'Start KM', 'End KM', 'Fuel Amount', 'Area', 'Driver', 'City',
-    'Karta Amount', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
+    'Karta Amount', 'Comment', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
     'Category2', 'Sub Category', 'Date',
   ]);
 
@@ -220,6 +220,7 @@ function _buildFuelSheet(settings, fuel) {
       e.driver         || '',
       e.city           || '',
       parseFloat(e.kartaAmount) || 0,
+      e.comment        || '',
       e.coordinator    || '',
       e.trackingNumber || settings.trackingNumber || 0,
       settings.name    || '',
@@ -354,13 +355,14 @@ function _fuelColWidths() {
     { wch: 16 }, /* J Driver */
     { wch: 14 }, /* K City */
     { wch: 12 }, /* L Karta Amount */
-    { wch: 16 }, /* M Coordinator */
-    { wch: 12 }, /* N Tracking # */
-    { wch: 28 }, /* O Name */
-    { wch: 8  }, /* P Site Count */
-    { wch: 14 }, /* Q Category2 */
-    { wch: 14 }, /* R Sub Category */
-    { wch: 14 }, /* S Date */
+    { wch: 22 }, /* M Comment */
+    { wch: 16 }, /* N Coordinator */
+    { wch: 12 }, /* O Tracking # */
+    { wch: 28 }, /* P Name */
+    { wch: 8  }, /* Q Site Count */
+    { wch: 14 }, /* R Category2 */
+    { wch: 14 }, /* S Sub Category */
+    { wch: 14 }, /* T Date */
   ];
 }
 
@@ -551,11 +553,11 @@ function _buildCoordExpensesSheet(settings, expenses, reviewData) {
 
 /* --------------------------------------------------------------------------
    _buildCoordFuelSheet — approved fuel + Coordinator Notes column
-   Columns A–T (20 cols, 0–19): same as field fuel export + col 19 = Coord Notes
+   Columns A–U (21 cols, 0–20): same as field fuel export + col 20 = Coord Notes
    -------------------------------------------------------------------------- */
 
 function _buildCoordFuelSheet(settings, fuel, reviewData) {
-  const NCOLS    = 20;
+  const NCOLS    = 21;
   const fuelTotal  = fuel.reduce(function (s, e) { return s + (parseFloat(e.fuelAmount)  || 0); }, 0);
   const kartaTotal = fuel.reduce(function (s, e) { return s + (parseFloat(e.kartaAmount) || 0); }, 0);
 
@@ -579,7 +581,7 @@ function _buildCoordFuelSheet(settings, fuel, reviewData) {
     '', '',
     'Project name', 'Site ID', 'Job Code',
     'Start KM', 'End KM', 'Fuel Amount', 'Area', 'Driver', 'City',
-    'Karta Amount', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
+    'Karta Amount', 'Comment', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
     'Category2', 'Sub Category', 'Date',
     'Coordinator Notes',
   ]);
@@ -601,6 +603,7 @@ function _buildCoordFuelSheet(settings, fuel, reviewData) {
       e.driver         || '',
       e.city           || '',
       parseFloat(e.kartaAmount) || 0,
+      e.comment        || '',
       e.coordinator    || '',
       e.trackingNumber || settings.trackingNumber || 0,
       settings.name    || '',

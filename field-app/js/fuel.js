@@ -84,6 +84,7 @@ function buildFuelFromForm() {
   const driver      = _inputVal('fieldDriver');
   const city        = _inputVal('fieldCity');
   const coordinator = _inputVal('fieldCoordinator');
+  const comment     = _inputVal('fieldComment');
 
   return {
     id:             generateId(),
@@ -100,6 +101,7 @@ function buildFuelFromForm() {
     driver,
     city,
     coordinator,
+    comment,
     trackingNumber: settings.trackingNumber || 0,
     date,
     createdAt:      new Date().toISOString(),
@@ -118,11 +120,6 @@ function validateFuelForm() {
 
   if (!_inputVal('fieldSiteId')) {
     _showError('fieldSiteId', 'errorSiteId');
-    valid = false;
-  }
-
-  if (!_inputVal('fieldJobCode')) {
-    _showError('fieldJobCode', 'errorJobCode');
     valid = false;
   }
 
@@ -372,6 +369,7 @@ function loadFuelForEdit(id) {
   _setInput('fieldDriver',      entry.driver);
   _setInput('fieldCity',        entry.city);
   _setInput('fieldCoordinator', entry.coordinator);
+  _setInput('fieldComment',     entry.comment || '');
   _setInput('editEntryId',      entry.id);
 
   /* Compute and show distance from stored values */
@@ -513,6 +511,7 @@ function _resetFuelFormToDefaults() {
   _setInput('fieldDriver',      settings.defaultDriver     || '');
   _setInput('fieldCoordinator', settings.defaultCoordinator || '');
   _setInput('fieldKartaAmount', 0);
+  _setInput('fieldComment',     '');
   _setInput('fieldDistance',    '');
 
   /* NOTE: fieldStartKm is intentionally NOT cleared here —
