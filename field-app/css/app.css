@@ -592,7 +592,8 @@
   right: 0;
   z-index: 90;
   display: flex;
-  gap: var(--sp-3);
+  flex-wrap: wrap;  /* allow 2-row layout on narrow screens */
+  gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-4);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
@@ -603,14 +604,23 @@
   flex: 1;
 }
 
-/* Extra bottom padding on form pages to clear the sticky bar */
+/* Primary (Save) button: full-width top row so it is never cut off.
+   Secondary buttons (Cancel, Add Another) share the row below. */
+.form-actions-bar .btn-primary {
+  order: -1;      /* visually first */
+  flex: 0 0 100%; /* own row */
+}
+
+/* Extra bottom padding on form pages to clear the 2-row sticky bar.
+   Bar height = 12px pad + 40px row + 8px gap + 40px row + 12px pad = 112px */
 .has-form-actions-bar {
-  padding-bottom: calc(80px + 68px); /* form bar height + bottom nav */
+  padding-bottom: calc(80px + 116px);
 }
 
 @media (min-width: 768px) {
   .form-actions-bar {
     position: static;
+    flex-wrap: nowrap;
     background: none;
     border: none;
     box-shadow: none;
@@ -622,6 +632,12 @@
   .form-actions-bar .btn {
     flex: none;
     min-width: 120px;
+  }
+
+  /* Reset mobile order so Save stays last (right-most) on desktop */
+  .form-actions-bar .btn-primary {
+    order: 0;
+    flex: none;
   }
 
   .has-form-actions-bar {
