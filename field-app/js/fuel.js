@@ -436,6 +436,16 @@ document.addEventListener('DOMContentLoaded', function () {
   _wireFuelButton('btnCancel', function () {
     window.location.href = 'index.html';
   });
+
+  /* ---- Clear field error as the user corrects each field ---- */
+  ['fieldSiteId', 'fieldJobCode', 'fieldStartKm', 'fieldEndKm', 'fieldFuelAmount'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function () { _clearFuelFieldError(id); });
+  });
+  ['fieldProject'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', function () { _clearFuelFieldError(id); });
+  });
 });
 
 /* ==========================================================================
@@ -482,6 +492,14 @@ function _clearFuelFormErrors() {
   document.querySelectorAll('.form-error').forEach(
     function (el) { el.classList.add('hidden'); }
   );
+}
+
+function _clearFuelFieldError(inputId) {
+  var input = document.getElementById(inputId);
+  if (input) input.classList.remove('is-error');
+  var errorId = 'error' + inputId.charAt(0).toUpperCase() + inputId.slice(1).replace('field', '');
+  var error   = document.getElementById(errorId);
+  if (error) error.classList.add('hidden');
 }
 
 /* ---- Reset form to add-mode defaults ------------------------------------ */

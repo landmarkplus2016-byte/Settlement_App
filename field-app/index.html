@@ -164,7 +164,7 @@
       <div class="welcome-row">
         <div>
           <div class="welcome-greeting">
-            <span data-i18n="home" style="font-weight:400;font-size:var(--text-lg);color:var(--color-text-secondary)">Hello,</span>
+            <span data-i18n="hello" style="font-weight:400;font-size:var(--text-lg);color:var(--color-text-secondary)">Hello,</span>
             <span id="welcomeName"> —</span>
           </div>
           <div class="welcome-sub" id="welcomeSub"></div>
@@ -457,6 +457,7 @@
   <script src="js/app.js"></script>
   <script src="js/expenses.js"></script>
   <script src="js/fuel.js"></script>
+  <script src="../shared/js/sample-data.js"></script>
 
   <!-- Dashboard logic — runs after all globals are available -->
   <script>
@@ -518,6 +519,9 @@
 
     /* ---- Recent entries ---- */
     _renderRecentEntries(expenses, fuel);
+
+    /* Sample data button — appears only when both arrays are empty */
+    initSampleDataBtn();
   });
 
 

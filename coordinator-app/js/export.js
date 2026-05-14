@@ -301,7 +301,7 @@ function triggerFinalExport() {
 
   } catch (err) {
     if (btn) btn.disabled = false;
-    showToast('Export failed: ' + (err.message || 'unknown error'), 'danger');
+    showToast('Export failed: ' + (err.message || 'unknown error'), 'error');
   }
 }
 

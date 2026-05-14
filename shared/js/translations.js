@@ -108,6 +108,7 @@ const TRANSLATIONS = {
     loadedSampleData: 'Sample data loaded. You can edit or submit it.',
 
     /* --- Dashboard --- */
+    hello:           'Hello,',
     totalExpenses:   'Total Expenses',
     totalFuel:       'Total Fuel',
     expenseEntries:  'Expense Entries',
@@ -116,6 +117,25 @@ const TRANSLATIONS = {
     recentEntries:   'Recent Entries',
     quickActions:    'Quick Actions',
     importedReports: 'Imported Reports',
+    totalReports:    'Total Reports',
+    pendingReview:   'Pending Review',
+    fullyApproved:   'Fully Approved',
+    noReports:       'No Reports Yet',
+    exportFinal:     'Export Final',
+
+    /* --- Import page --- */
+    importReport:      'Import Field Report',
+    dropZoneLabel:     'Drag & drop Excel or JSON file here',
+    or:                'or',
+    browseFile:        'Browse File',
+    formatsSupported:  '.xlsx (Excel) and .json files supported',
+    filePreview:       'File Preview',
+    confirmImport:     'Confirm Import',
+    importFailed:      'Import Failed',
+    tryAgain:          'Try Again',
+    noExpenses:        'No expense entries in this file.',
+    noFuel:            'No fuel entries in this file.',
+    unsupportedFile:   'Unsupported file type. Please use an .xlsx or .json file.',
 
     /* --- Export / Import --- */
     exportSummary:   'Export Summary',
@@ -272,30 +292,50 @@ const TRANSLATIONS = {
     /* تم تحميل البيانات التجريبية. يمكنك تعديلها أو إرسالها. */
 
     /* --- Dashboard --- */
-    totalExpenses:   'إجمالي المصروفات',  /* إجمالي المصروفات  */
-    totalFuel:       'إجمالي الوقود',                    /* إجمالي الوقود     */
-    expenseEntries:  'سجلات المصروفات',       /* سجلات المصروفات   */
-    fuelEntries:     'سجلات الوقود',                         /* سجلات الوقود      */
-    reviewProgress:  'تقدم المراجعة',                   /* تقدم المراجعة     */
-    recentEntries:   'السجلات الأخيرة',       /* السجلات الأخيرة   */
-    quickActions:    'إجراءات سريعة',                   /* إجراءات سريعة     */
-    importedReports: 'التقارير المستوردة', /* التقارير المستوردة */
+    hello:           'مرحباً،',
+    totalExpenses:   'إجمالي المصروفات',
+    totalFuel:       'إجمالي الوقود',
+    expenseEntries:  'سجلات المصروفات',
+    fuelEntries:     'سجلات الوقود',
+    reviewProgress:  'تقدم المراجعة',
+    recentEntries:   'السجلات الأخيرة',
+    quickActions:    'إجراءات سريعة',
+    importedReports: 'التقارير المستوردة',
+    totalReports:    'إجمالي التقارير',
+    pendingReview:   'قيد المراجعة',
+    fullyApproved:   'معتمد بالكامل',
+    noReports:       'لا توجد تقارير',
+    exportFinal:     'تصدير نهائي',
+
+    /* --- Import page --- */
+    importReport:     'استيراد تقرير ميداني',
+    dropZoneLabel:    'اسحب وأفلت ملف Excel أو JSON هنا',
+    or:               'أو',
+    browseFile:       'استعراض ملف',
+    formatsSupported: 'يدعم ملفات .xlsx (Excel) و .json',
+    filePreview:      'معاينة الملف',
+    confirmImport:    'تأكيد الاستيراد',
+    importFailed:     'فشل الاستيراد',
+    tryAgain:         'حاول مرة أخرى',
+    noExpenses:       'لا توجد مصروفات في هذا الملف.',
+    noFuel:           'لا توجد سجلات وقود في هذا الملف.',
+    unsupportedFile:  'نوع الملف غير مدعوم. يرجى استخدام ملف .xlsx أو .json.',
 
     /* --- Export / Import --- */
-    exportSummary:   'ملخص التصدير',        /* ملخص التصدير          */
-    expenseCount:    'سجلات المصروفات', /* سجلات المصروفات  */
-    fuelCount:       'سجلات الوقود',        /* سجلات الوقود          */
-    expenseTotal:    'إجمالي المصروفات', /* إجمالي المصروفات */
-    fuelTotal:       'إجمالي الوقود',  /* إجمالي الوقود         */
-    kartaTotal:      'إجمالي الكارتة', /* إجمالي الكارتة   */
-    dateRange:       'نطاق التاريخ',        /* نطاق التاريخ          */
-    fieldMember:     'عضو الفريق الميداني', /* عضو الفريق الميداني */
-    trackingNum:     'رقم التتبع',                    /* رقم التتبع            */
-    clearAfterExport:'مسح البيانات بعد التصدير', /* مسح البيانات بعد التصدير */
-    exportChecklist: 'قبل التصدير',              /* قبل التصدير           */
-    approvedEntries: 'السجلات المعتمدة', /* السجلات المعتمدة  */
-    flaggedEntries:  'السجلات المُعلَّمة', /* السجلات المُعلَّمة */
-    pendingEntries:  'السجلات قيد المراجعة', /* السجلات قيد المراجعة */
+    exportSummary:   'ملخص التصدير',
+    expenseCount:    'سجلات المصروفات',
+    fuelCount:       'سجلات الوقود',
+    expenseTotal:    'إجمالي المصروفات',
+    fuelTotal:       'إجمالي الوقود',
+    kartaTotal:      'إجمالي الكارتة',
+    dateRange:       'نطاق التاريخ',
+    fieldMember:     'عضو الفريق الميداني',
+    trackingNum:     'رقم التتبع',
+    clearAfterExport:'مسح البيانات بعد التصدير',
+    exportChecklist: 'قبل التصدير',
+    approvedEntries: 'السجلات المعتمدة',
+    flaggedEntries:  'السجلات المُعلَّمة',
+    pendingEntries:  'السجلات قيد المراجعة',
 
     /* --- Approval Footer --- */
     approval:           'إعتماد',                                    /* إعتماد          */

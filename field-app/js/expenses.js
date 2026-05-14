@@ -320,6 +320,16 @@ document.addEventListener('DOMContentLoaded', function () {
   _wireButton('btnCancel',     function () {
     window.location.href = 'index.html';
   });
+
+  /* ---- Clear field error as the user corrects each field ---- */
+  ['fieldSiteId', 'fieldJobCode', 'fieldAmount'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function () { _clearFieldError(id); });
+  });
+  ['fieldCategory', 'fieldSubCategory'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', function () { _clearFieldError(id); });
+  });
 });
 
 /* ==========================================================================
@@ -376,6 +386,15 @@ function _clearFormErrors() {
   document.querySelectorAll('.form-error').forEach(
     function (el) { el.classList.add('hidden'); }
   );
+}
+
+function _clearFieldError(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) input.classList.remove('is-error');
+  /* Find the paired error span (id = 'error' + PascalCase of inputId) */
+  const errorId = 'error' + inputId.charAt(0).toUpperCase() + inputId.slice(1).replace('field', '');
+  const error   = document.getElementById(errorId);
+  if (error) error.classList.add('hidden');
 }
 
 /* ---- Reset form to add-mode defaults ------------------------------------ */
