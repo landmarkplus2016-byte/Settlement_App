@@ -82,14 +82,14 @@ function generateFieldJSON(settings, expenses, fuel) {
 
 /* ==========================================================================
    PRIVATE — EXPENSES SHEET
-   Columns A–R (18 cols, index 0–17):
-   (blank), (blank), Month, Day, Project name, Site ID, Job Code,
+   Columns A–P (16 cols, index 0–15):
+   (blank), (blank), Project name, Site ID, Job Code,
    Category, Item Description, Amount, Comment, Coordinator,
    Tracking #, Name, Site Count, Category2, Sub Category, Date
    ========================================================================== */
 
 function _buildExpensesSheet(settings, expenses) {
-  const NCOLS   = 18;
+  const NCOLS   = 16;
   const expTotal = expenses.reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
 
   const rows = [];
@@ -99,21 +99,20 @@ function _buildExpensesSheet(settings, expenses) {
   rows.push(_blankRow(NCOLS, {
     0: 'Account:',
     1: settings.accountType || 'New',
-    5: 'VF',
+    3: 'VF',
   }));
   rows.push(_blankRow(NCOLS, {
-    0:  'Name:',
-    1:  settings.name || '',
-    3:  'New',
-    5:  'Total:',
-    6:  expTotal,
+    0: 'Name:',
+    1: settings.name || '',
+    3: 'Total:',
+    4: expTotal,
   }));
   rows.push(new Array(NCOLS).fill('')); // blank spacer
 
   /* ---- Row 4: column headers ---- */
   rows.push([
     '', '',
-    'Month', 'Day', 'Project name', 'Site ID', 'Job Code',
+    'Project name', 'Site ID', 'Job Code',
     'Category', 'Item Description', 'Amount', 'Comment',
     'Coordinator', 'Tracking #', 'Name', 'Site Count',
     'Category2', 'Sub Category', 'Date',
@@ -123,8 +122,6 @@ function _buildExpensesSheet(settings, expenses) {
   expenses.forEach(function (e) {
     rows.push([
       '', '',
-      e.month          || '',
-      typeof e.day === 'number' ? e.day : (parseInt(e.day, 10) || ''),
       e.projectName    || '',
       e.siteId         || '',
       e.jobCode        || '',
@@ -166,14 +163,14 @@ function _buildExpensesSheet(settings, expenses) {
 
 /* ==========================================================================
    PRIVATE — FUEL SHEET
-   Columns A–U (21 cols, index 0–20):
-   (blank), (blank), Month, Day, Project name, Site ID, Job Code,
+   Columns A–S (19 cols, index 0–18):
+   (blank), (blank), Project name, Site ID, Job Code,
    Start KM, End KM, Fuel Amount, Area, Driver, City, Karta Amount,
    Coordinator, Tracking #, Name, Site Count, Category2, Sub Category, Date
    ========================================================================== */
 
 function _buildFuelSheet(settings, fuel) {
-  const NCOLS    = 21;
+  const NCOLS    = 19;
   const fuelTotal  = fuel.reduce(function (s, e) { return s + (parseFloat(e.fuelAmount)  || 0); }, 0);
   const kartaTotal = fuel.reduce(function (s, e) { return s + (parseFloat(e.kartaAmount) || 0); }, 0);
 
@@ -184,24 +181,24 @@ function _buildFuelSheet(settings, fuel) {
   rows.push(_blankRow(NCOLS, {
     0: 'Account:',
     1: settings.accountType || 'New',
-    5: 'VF',
+    3: 'VF',
   }));
   rows.push(_blankRow(NCOLS, {
-    0:  'Name:',
-    1:  settings.name || '',
-    3:  'New Fuel:',
-    4:  fuelTotal,
-    6:  'Karta:',
-    7:  kartaTotal,
-    9:  'Total:',
-    10: fuelTotal + kartaTotal,
+    0: 'Name:',
+    1: settings.name || '',
+    2: 'New Fuel:',
+    3: fuelTotal,
+    5: 'Karta:',
+    6: kartaTotal,
+    8: 'Total:',
+    9: fuelTotal + kartaTotal,
   }));
   rows.push(new Array(NCOLS).fill(''));
 
   /* ---- Row 4: column headers ---- */
   rows.push([
     '', '',
-    'Month', 'Day', 'Project name', 'Site ID', 'Job Code',
+    'Project name', 'Site ID', 'Job Code',
     'Start KM', 'End KM', 'Fuel Amount', 'Area', 'Driver', 'City',
     'Karta Amount', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
     'Category2', 'Sub Category', 'Date',
@@ -213,8 +210,6 @@ function _buildFuelSheet(settings, fuel) {
     const endKm   = parseFloat(e.endKm)   || 0;
     rows.push([
       '', '',
-      e.month          || '',
-      typeof e.day === 'number' ? e.day : (parseInt(e.day, 10) || ''),
       e.projectName    || '',
       e.siteId         || '',
       e.jobCode        || '',
@@ -255,25 +250,21 @@ function _buildFuelSheet(settings, fuel) {
 
 /* ==========================================================================
    PRIVATE — LIST SHEET
-   Columns: Month, Day, Project, PC, Category, Name
+   Columns: Project, PC, Category, Name
    ========================================================================== */
 
 function _buildListSheet(settings) {
-  const months     = LISTS.months;
-  const days       = LISTS.days;
   const projects   = LISTS.projects;
   const categories = LISTS.categories;
   const accounts   = LISTS.accountTypes;
 
   const rows = [];
-  rows.push(['Month', 'Day', 'Project', 'PC', 'Category', 'Name']);
+  rows.push(['Project', 'PC', 'Category', 'Name']);
 
-  const maxRows = Math.max(months.length, days.length, projects.length, categories.length, accounts.length);
+  const maxRows = Math.max(projects.length, categories.length, accounts.length);
 
   for (var i = 0; i < maxRows; i++) {
     rows.push([
-      months[i]     !== undefined ? months[i]     : '',
-      days[i]       !== undefined ? days[i]       : '',
       projects[i]   !== undefined ? projects[i]   : '',
       accounts[i]   !== undefined ? accounts[i]   : '',
       categories[i] !== undefined ? categories[i] : '',
@@ -284,8 +275,6 @@ function _buildListSheet(settings) {
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   ws['!cols'] = [
-    { wch: 8 },   /* Month */
-    { wch: 5 },   /* Day */
     { wch: 14 },  /* Project */
     { wch: 8 },   /* PC */
     { wch: 22 },  /* Category */
@@ -334,22 +323,20 @@ function _expenseColWidths() {
   return [
     { wch: 4  }, /* A blank */
     { wch: 4  }, /* B blank */
-    { wch: 7  }, /* C Month */
-    { wch: 5  }, /* D Day */
-    { wch: 14 }, /* E Project name */
-    { wch: 10 }, /* F Site ID */
-    { wch: 10 }, /* G Job Code */
-    { wch: 18 }, /* H Category */
-    { wch: 28 }, /* I Item Description */
-    { wch: 12 }, /* J Amount */
-    { wch: 22 }, /* K Comment */
-    { wch: 16 }, /* L Coordinator */
-    { wch: 12 }, /* M Tracking # */
-    { wch: 28 }, /* N Name */
-    { wch: 8  }, /* O Site Count */
-    { wch: 18 }, /* P Category2 */
-    { wch: 16 }, /* Q Sub Category */
-    { wch: 14 }, /* R Date */
+    { wch: 14 }, /* C Project name */
+    { wch: 10 }, /* D Site ID */
+    { wch: 10 }, /* E Job Code */
+    { wch: 18 }, /* F Category */
+    { wch: 28 }, /* G Item Description */
+    { wch: 12 }, /* H Amount */
+    { wch: 22 }, /* I Comment */
+    { wch: 16 }, /* J Coordinator */
+    { wch: 12 }, /* K Tracking # */
+    { wch: 28 }, /* L Name */
+    { wch: 8  }, /* M Site Count */
+    { wch: 18 }, /* N Category2 */
+    { wch: 16 }, /* O Sub Category */
+    { wch: 14 }, /* P Date */
   ];
 }
 
@@ -357,25 +344,23 @@ function _fuelColWidths() {
   return [
     { wch: 4  }, /* A blank */
     { wch: 4  }, /* B blank */
-    { wch: 7  }, /* C Month */
-    { wch: 5  }, /* D Day */
-    { wch: 14 }, /* E Project name */
-    { wch: 10 }, /* F Site ID */
-    { wch: 10 }, /* G Job Code */
-    { wch: 11 }, /* H Start KM */
-    { wch: 11 }, /* I End KM */
-    { wch: 12 }, /* J Fuel Amount */
-    { wch: 12 }, /* K Area */
-    { wch: 16 }, /* L Driver */
-    { wch: 14 }, /* M City */
-    { wch: 12 }, /* N Karta Amount */
-    { wch: 16 }, /* O Coordinator */
-    { wch: 12 }, /* P Tracking # */
-    { wch: 28 }, /* Q Name */
-    { wch: 8  }, /* R Site Count */
-    { wch: 14 }, /* S Category2 */
-    { wch: 14 }, /* T Sub Category */
-    { wch: 14 }, /* U Date */
+    { wch: 14 }, /* C Project name */
+    { wch: 10 }, /* D Site ID */
+    { wch: 10 }, /* E Job Code */
+    { wch: 11 }, /* F Start KM */
+    { wch: 11 }, /* G End KM */
+    { wch: 12 }, /* H Fuel Amount */
+    { wch: 12 }, /* I Area */
+    { wch: 16 }, /* J Driver */
+    { wch: 14 }, /* K City */
+    { wch: 12 }, /* L Karta Amount */
+    { wch: 16 }, /* M Coordinator */
+    { wch: 12 }, /* N Tracking # */
+    { wch: 28 }, /* O Name */
+    { wch: 8  }, /* P Site Count */
+    { wch: 14 }, /* Q Category2 */
+    { wch: 14 }, /* R Sub Category */
+    { wch: 14 }, /* S Date */
   ];
 }
 
@@ -495,11 +480,11 @@ function generateCoordinatorExcel(importData, reviewData) {
 
 /* --------------------------------------------------------------------------
    _buildCoordExpensesSheet — approved expenses + Coordinator Notes column
-   Columns A–S (19 cols, 0–18): same as field export + col 18 = Coord Notes
+   Columns A–Q (17 cols, 0–16): same as field export + col 16 = Coord Notes
    -------------------------------------------------------------------------- */
 
 function _buildCoordExpensesSheet(settings, expenses, reviewData) {
-  const NCOLS    = 19;
+  const NCOLS    = 17;
   const expTotal = expenses.reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
 
   const rows = [];
@@ -507,17 +492,17 @@ function _buildCoordExpensesSheet(settings, expenses, reviewData) {
   /* Header block (rows 0-3) */
   rows.push(_blankRow(NCOLS, { 0: 'Expenses Tracking — Approved Only' }));
   rows.push(_blankRow(NCOLS, {
-    0: 'Account:', 1: settings.accountType || 'New', 5: 'VF',
+    0: 'Account:', 1: settings.accountType || 'New', 3: 'VF',
   }));
   rows.push(_blankRow(NCOLS, {
-    0: 'Name:', 1: settings.name || '', 3: 'New', 5: 'Total:', 6: expTotal,
+    0: 'Name:', 1: settings.name || '', 3: 'Total:', 4: expTotal,
   }));
   rows.push(new Array(NCOLS).fill(''));
 
   /* Column headers (row 4) */
   rows.push([
     '', '',
-    'Month', 'Day', 'Project name', 'Site ID', 'Job Code',
+    'Project name', 'Site ID', 'Job Code',
     'Category', 'Item Description', 'Amount', 'Comment',
     'Coordinator', 'Tracking #', 'Name', 'Site Count',
     'Category2', 'Sub Category', 'Date',
@@ -529,8 +514,6 @@ function _buildCoordExpensesSheet(settings, expenses, reviewData) {
     const note = (reviewData[e.id] && reviewData[e.id].coordinatorNote) || '';
     rows.push([
       '', '',
-      e.month          || '',
-      typeof e.day === 'number' ? e.day : (parseInt(e.day, 10) || ''),
       e.projectName    || '',
       e.siteId         || '',
       e.jobCode        || '',
@@ -568,11 +551,11 @@ function _buildCoordExpensesSheet(settings, expenses, reviewData) {
 
 /* --------------------------------------------------------------------------
    _buildCoordFuelSheet — approved fuel + Coordinator Notes column
-   Columns A–V (22 cols, 0–21): same as field fuel export + col 21 = Coord Notes
+   Columns A–T (20 cols, 0–19): same as field fuel export + col 19 = Coord Notes
    -------------------------------------------------------------------------- */
 
 function _buildCoordFuelSheet(settings, fuel, reviewData) {
-  const NCOLS    = 22;
+  const NCOLS    = 20;
   const fuelTotal  = fuel.reduce(function (s, e) { return s + (parseFloat(e.fuelAmount)  || 0); }, 0);
   const kartaTotal = fuel.reduce(function (s, e) { return s + (parseFloat(e.kartaAmount) || 0); }, 0);
 
@@ -581,20 +564,20 @@ function _buildCoordFuelSheet(settings, fuel, reviewData) {
   /* Header block */
   rows.push(_blankRow(NCOLS, { 0: 'Fuel Tracking — Approved Only' }));
   rows.push(_blankRow(NCOLS, {
-    0: 'Account:', 1: settings.accountType || 'New', 5: 'VF',
+    0: 'Account:', 1: settings.accountType || 'New', 3: 'VF',
   }));
   rows.push(_blankRow(NCOLS, {
     0: 'Name:', 1: settings.name || '',
-    3: 'New Fuel:', 4: fuelTotal,
-    6: 'Karta:', 7: kartaTotal,
-    9: 'Total:', 10: fuelTotal + kartaTotal,
+    2: 'New Fuel:', 3: fuelTotal,
+    5: 'Karta:', 6: kartaTotal,
+    8: 'Total:', 9: fuelTotal + kartaTotal,
   }));
   rows.push(new Array(NCOLS).fill(''));
 
   /* Column headers */
   rows.push([
     '', '',
-    'Month', 'Day', 'Project name', 'Site ID', 'Job Code',
+    'Project name', 'Site ID', 'Job Code',
     'Start KM', 'End KM', 'Fuel Amount', 'Area', 'Driver', 'City',
     'Karta Amount', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
     'Category2', 'Sub Category', 'Date',
@@ -608,8 +591,6 @@ function _buildCoordFuelSheet(settings, fuel, reviewData) {
     const endKm   = parseFloat(e.endKm)   || 0;
     rows.push([
       '', '',
-      e.month          || '',
-      typeof e.day === 'number' ? e.day : (parseInt(e.day, 10) || ''),
       e.projectName    || '',
       e.siteId         || '',
       e.jobCode        || '',

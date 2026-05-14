@@ -40,6 +40,48 @@ function getCurrentYear() {
 }
 
 /* --------------------------------------------------------------------------
+   DATE PICKER HELPERS — bridge between <input type="date"> (YYYY-MM-DD)
+   and the data model (day/month/year/date fields).
+   -------------------------------------------------------------------------- */
+
+var _MONTH_ABBREVS = ['Jan','Feb','Mar','Apr','May','Jun',
+                      'Jul','Aug','Sep','Oct','Nov','Dec'];
+var _MONTH_TO_PAD  = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',
+                       Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+
+/* Parse "YYYY-MM-DD" → {day, month, year, date}.  Falls back to today. */
+function parseDatePickerValue(val) {
+  var parts = (val || '').split('-');
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  var d = parseInt(parts[2], 10);
+  if (!y || !m || !d) {
+    var now = new Date();
+    y = now.getFullYear(); m = now.getMonth() + 1; d = now.getDate();
+  }
+  var month = _MONTH_ABBREVS[m - 1];
+  return { day: d, month: month, year: y, date: formatDate(d, month, y) };
+}
+
+/* Convert stored "16-Apr-2026" → "2026-04-16" for <input type="date">. */
+function toDatePickerValue(dateStr) {
+  if (!dateStr) return getTodayPickerValue();
+  var parts = String(dateStr).split('-');
+  if (parts.length !== 3) return getTodayPickerValue();
+  var dd = String(parts[0]).padStart(2, '0');
+  var mm = _MONTH_TO_PAD[parts[1]] || '01';
+  return parts[2] + '-' + mm + '-' + dd;
+}
+
+/* Today as "YYYY-MM-DD" for the default date input value. */
+function getTodayPickerValue() {
+  var now = new Date();
+  var m   = String(now.getMonth() + 1).padStart(2, '0');
+  var d   = String(now.getDate()).padStart(2, '0');
+  return now.getFullYear() + '-' + m + '-' + d;
+}
+
+/* --------------------------------------------------------------------------
    LOCAL STORAGE
    -------------------------------------------------------------------------- */
 

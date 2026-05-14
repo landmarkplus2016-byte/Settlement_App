@@ -72,8 +72,7 @@ function getFuelTotals() {
 function buildFuelFromForm() {
   const settings = getSettings() || {};
 
-  const month       = _selectVal('fieldMonth')       || getCurrentMonth();
-  const day         = parseInt(_inputVal('fieldDay'), 10) || getCurrentDay();
+  const { day, month, year, date } = parseDatePickerValue(_inputVal('fieldDate'));
   const projectName = _selectVal('fieldProject')     || '';
   const siteId      = _inputVal('fieldSiteId');
   const jobCode     = _inputVal('fieldJobCode');
@@ -85,9 +84,6 @@ function buildFuelFromForm() {
   const driver      = _inputVal('fieldDriver');
   const city        = _inputVal('fieldCity');
   const coordinator = _inputVal('fieldCoordinator');
-
-  const year = getCurrentYear();
-  const date = formatDate(day, month, year);
 
   return {
     id:             generateId(),
@@ -364,8 +360,7 @@ function loadFuelForEdit(id) {
   }
 
   /* ---- Populate all form fields ---- */
-  _setSelect('fieldMonth',      entry.month);
-  _setInput('fieldDay',         entry.day);
+  _setInput('fieldDate',        toDatePickerValue(entry.date));
   _setSelect('fieldProject',    entry.projectName);
   _setInput('fieldSiteId',      entry.siteId);
   _setInput('fieldJobCode',     entry.jobCode);
@@ -397,14 +392,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const settings = getSettings() || {};
 
   /* ---- Populate selects ---- */
-  populateSelect(document.getElementById('fieldMonth'),
-                 'months', getCurrentMonth());
-
   populateSelect(document.getElementById('fieldProject'),
                  'projects', settings.defaultProject || '');
 
-  /* ---- Default text / number inputs ---- */
-  _setInput('fieldDay',         getCurrentDay());
+  /* ---- Default field values ---- */
+  _setInput('fieldDate',        getTodayPickerValue());
   _setInput('fieldDriver',      settings.defaultDriver      || '');
   _setInput('fieldCoordinator', settings.defaultCoordinator || '');
   _setInput('fieldKartaAmount', 0);
@@ -516,8 +508,7 @@ function _resetFuelFormToDefaults() {
   _setInput('fieldCity',        '');
 
   /* Reset to defaults */
-  _setInput('fieldDay',         getCurrentDay());
-  _setSelect('fieldMonth',      getCurrentMonth());
+  _setInput('fieldDate',        getTodayPickerValue());
   _setSelect('fieldProject',    settings.defaultProject    || '');
   _setInput('fieldDriver',      settings.defaultDriver     || '');
   _setInput('fieldCoordinator', settings.defaultCoordinator || '');

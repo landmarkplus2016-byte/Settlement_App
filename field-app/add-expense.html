@@ -145,34 +145,17 @@
       ------------------------------------------------------------------- -->
       <div class="form-section-label">Date</div>
 
-      <div class="grid-2">
-
-        <!-- 1. Month -->
-        <div class="form-group">
-          <label class="form-label" for="fieldMonth">
-            <span data-i18n="month">Month</span>
-          </label>
-          <!-- Populated by JS via populateSelect -->
-          <select id="fieldMonth" class="form-select"></select>
-        </div>
-
-        <!-- 2. Day -->
-        <div class="form-group">
-          <label class="form-label" for="fieldDay">
-            <span data-i18n="day">Day</span>
-          </label>
-          <input
-            type="number"
-            id="fieldDay"
-            class="form-input ltr-field"
-            min="1"
-            max="31"
-            placeholder="1–31"
-            inputmode="numeric"
-          />
-        </div>
-
-      </div><!-- /grid-2 date -->
+      <div class="form-group">
+        <label class="form-label" for="fieldDate">
+          <span data-i18n="date">Date</span>
+        </label>
+        <input
+          type="date"
+          id="fieldDate"
+          class="form-input ltr-field"
+          required
+        />
+      </div>
 
 
       <!-- ------------------------------------------------------------------
@@ -537,9 +520,6 @@
     /* ---- Populate all selects (before loadExpenseForEdit so values stick) ---- */
     const settings = getSettings() || {};
 
-    populateSelect(document.getElementById('fieldMonth'),
-                   'months', getCurrentMonth());
-
     populateSelect(document.getElementById('fieldProject'),
                    'projects', settings.defaultProject || '');
 
@@ -549,8 +529,8 @@
     populateSelect(document.getElementById('fieldSubCategory'),
                    'subCategories');
 
-    /* ---- Set default non-select fields ---- */
-    document.getElementById('fieldDay').value         = getCurrentDay();
+    /* ---- Set default field values ---- */
+    document.getElementById('fieldDate').value        = getTodayPickerValue();
     document.getElementById('fieldCoordinator').value = settings.defaultCoordinator || '';
 
     /* ---- Edit mode setup ---- */

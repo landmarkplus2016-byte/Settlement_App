@@ -44,8 +44,7 @@ function getTotalExpenses() {
 function buildExpenseFromForm() {
   const settings = getSettings() || {};
 
-  const month       = _selectVal('fieldMonth')       || getCurrentMonth();
-  const day         = parseInt(_inputVal('fieldDay'), 10) || getCurrentDay();
+  const { day, month, year, date } = parseDatePickerValue(_inputVal('fieldDate'));
   const projectName = _selectVal('fieldProject')     || '';
   const siteId      = _inputVal('fieldSiteId');
   const jobCode     = _inputVal('fieldJobCode');
@@ -55,9 +54,6 @@ function buildExpenseFromForm() {
   const amount      = parseFloat(_inputVal('fieldAmount')) || 0;
   const comment     = _inputVal('fieldComment');
   const coordinator = _inputVal('fieldCoordinator');
-
-  const year        = getCurrentYear();
-  const date        = formatDate(day, month, year);
 
   return {
     id:              generateId(),
@@ -261,8 +257,7 @@ function loadExpenseForEdit(id) {
   }
 
   /* ---- Populate form fields ---- */
-  _setSelect('fieldMonth',       entry.month);
-  _setInput('fieldDay',          entry.day);
+  _setInput('fieldDate',         toDatePickerValue(entry.date));
   _setSelect('fieldProject',     entry.projectName);
   _setInput('fieldSiteId',       entry.siteId);
   _setInput('fieldJobCode',      entry.jobCode);
@@ -291,9 +286,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const settings = getSettings() || {};
 
   /* ---- Populate all selects ---- */
-  populateSelect(document.getElementById('fieldMonth'),
-                 'months', getCurrentMonth());
-
   populateSelect(document.getElementById('fieldProject'),
                  'projects', settings.defaultProject || '');
 
@@ -303,8 +295,8 @@ document.addEventListener('DOMContentLoaded', function () {
   populateSelect(document.getElementById('fieldSubCategory'),
                  'subCategories');
 
-  /* ---- Set default text / number inputs ---- */
-  _setInput('fieldDay',         getCurrentDay());
+  /* ---- Set default field values ---- */
+  _setInput('fieldDate',        getTodayPickerValue());
   _setInput('fieldCoordinator', settings.defaultCoordinator || '');
 
   /* ---- Check for edit mode ---- */
@@ -410,11 +402,10 @@ function _resetFormToDefaults() {
   _setTextarea('fieldDescription', '');
 
   /* Reset to defaults */
-  _setInput('fieldDay', getCurrentDay());
+  _setInput('fieldDate', getTodayPickerValue());
   _setInput('fieldCoordinator', settings.defaultCoordinator || '');
 
   /* Re-select defaults on selects */
-  _setSelect('fieldMonth',      getCurrentMonth());
   _setSelect('fieldProject',    settings.defaultProject || '');
   _setSelect('fieldCategory',   '');
   _setSelect('fieldSubCategory', '');
