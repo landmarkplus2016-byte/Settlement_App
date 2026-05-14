@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Field — Export Report" />
+  <title>Export — ExpenseFuel Field</title>
+
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Export button (large, tappable on mobile)
+    ----------------------------------------------------------------------- */
+    .export-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      padding: var(--sp-4) var(--sp-5);
+      border-radius: var(--radius-lg);
+      font-size: var(--text-base);
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: var(--transition);
+      border: 2px solid transparent;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    [dir="rtl"] .export-btn { text-align: right; }
+
+    .export-btn-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .export-btn-body { flex: 1; min-width: 0; }
+    .export-btn-title { font-size: var(--text-base); font-weight: 600; }
+    .export-btn-sub   { font-size: var(--text-sm); margin-top: 2px; opacity: 0.8; }
+
+    /* Excel — navy primary */
+    .export-btn-excel {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border-color: var(--color-primary);
+    }
+    .export-btn-excel .export-btn-icon {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .export-btn-excel:hover {
+      background: var(--color-primary-hover);
+      border-color: var(--color-primary-hover);
+    }
+
+    /* JSON — secondary */
+    .export-btn-json {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      border-color: var(--color-border);
+    }
+    .export-btn-json .export-btn-icon {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .export-btn-json:hover {
+      border-color: var(--color-primary);
+      background: var(--color-primary-subtle);
+    }
+
+    /* Disabled export button */
+    .export-btn:disabled,
+    .export-btn[disabled] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* -----------------------------------------------------------------------
+       Inline success message (shown after successful export)
+    ----------------------------------------------------------------------- */
+    .export-success {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-3);
+      background: var(--color-success-bg);
+      border: 1px solid #a7f3d0;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      color: var(--color-success);
+      margin-top: var(--sp-2);
+    }
+
+    .export-success code {
+      font-family: 'Courier New', monospace;
+      font-size: var(--text-xs);
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 3px;
+      word-break: break-all;
+    }
+
+    /* -----------------------------------------------------------------------
+       Danger zone card
+    ----------------------------------------------------------------------- */
+    .danger-zone-card {
+      border: 1px solid #fca5a5;
+    }
+
+    .danger-zone-card .card-header {
+      border-bottom-color: #fca5a5;
+    }
+
+    .danger-zone-title {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-danger);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .danger-zone-desc {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--sp-4);
+      line-height: 1.6;
+    }
+
+    /* CLEAR gate input + button */
+    .clear-gate {
+      display: flex;
+      gap: var(--sp-3);
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .clear-gate .form-group { margin-bottom: 0; flex: 1; min-width: 160px; }
+
+    .btn-ghost-danger {
+      background: transparent;
+      color: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      flex-shrink: 0;
+    }
+
+    .btn-ghost-danger:hover:not(:disabled) {
+      background: var(--color-danger);
+      color: #fff;
+    }
+
+    .btn-ghost-danger:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* -----------------------------------------------------------------------
+       Summary card user row
+    ----------------------------------------------------------------------- */
+    .summary-user-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+    }
+
+    .summary-user-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-lg);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .summary-user-info { flex: 1; min-width: 0; }
+
+    .summary-user-name {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .summary-user-sub {
+      font-size: var(--text-sm);
+      color: rgba(255,255,255,0.75);
+      direction: ltr;
+    }
+
+    /* -----------------------------------------------------------------------
+       No-entries warning
+    ----------------------------------------------------------------------- */
+    .no-entries-card {
+      border: 1px solid #fde68a;
+    }
+  </style>
+</head>
+
+<body class="field-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="field-navbar-brand">
+      <span class="field-navbar-title" data-i18n="export">Export</span>
+      <span class="settings-complete-indicator"
+            id="settingsIndicator"
+            aria-label="Settings status"></span>
+    </div>
+
+    <div class="navbar-actions">
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+      <a href="settings.html" class="navbar-icon-btn" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </a>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content" id="mainContent">
+
+
+    <!-- =====================================================================
+         EXPORT SUMMARY CARD
+    ====================================================================== -->
+    <div class="export-summary-card" id="exportSummaryCard">
+
+      <!-- User info row -->
+      <div class="summary-user-row" style="margin-bottom:var(--sp-5)">
+        <div class="summary-user-avatar" id="exportInitials" aria-hidden="true">—</div>
+        <div class="summary-user-info">
+          <div class="summary-user-name" id="exportName">—</div>
+          <div class="summary-user-sub"  id="exportMobile">—</div>
+        </div>
+        <div class="tracking-number-badge" id="exportTracking" style="background:rgba(255,255,255,0.15);color:#fff">T-—</div>
+      </div>
+
+      <!-- Stats grid (2-col on mobile, 4-col on desktop) -->
+      <div class="stat-grid">
+
+        <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+          <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="exportExpenseCount"
+                 style="color:#fff;font-size:var(--text-2xl)">0</div>
+            <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                 data-i18n="expenseEntries">Expense Entries</div>
+          </div>
+        </div>
+
+        <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+          <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="exportExpenseTotal"
+                 style="color:#fff;font-size:var(--text-xl)">—</div>
+            <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                 data-i18n="totalExpenses">Total Expenses</div>
+          </div>
+        </div>
+
+        <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+          <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+              <path d="M3 22h18"></path>
+              <rect x="7" y="14" width="4" height="8"></rect>
+              <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="exportFuelCount"
+                 style="color:#fff;font-size:var(--text-2xl)">0</div>
+            <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                 data-i18n="fuelEntries">Fuel Entries</div>
+          </div>
+        </div>
+
+        <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+          <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="exportFuelTotal"
+                 style="color:#fff;font-size:var(--text-xl)">—</div>
+            <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                 data-i18n="totalFuel">Total Fuel</div>
+          </div>
+        </div>
+
+      </div><!-- /stat-grid -->
+
+      <!-- Detail rows: date range + karta -->
+      <div style="margin-top:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2)">
+
+        <div class="export-row" style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:var(--sp-2)">
+          <span class="export-row-label" style="color:rgba(255,255,255,0.7)" data-i18n="kartaTotal">Karta Total</span>
+          <span class="export-row-value ltr-field" id="exportKartaTotal" style="color:#fff">—</span>
+        </div>
+
+        <div class="export-row" style="padding-bottom:0;border:none">
+          <span class="export-row-label" style="color:rgba(255,255,255,0.7)" data-i18n="dateRange">Date Range</span>
+          <span class="export-row-value ltr-field" id="exportDateRange" style="color:#fff;font-size:var(--text-sm)">—</span>
+        </div>
+
+      </div>
+
+    </div><!-- /export-summary-card -->
+
+
+    <!-- =====================================================================
+         NO ENTRIES WARNING (hidden when entries exist)
+    ====================================================================== -->
+    <div class="card no-entries-card hidden" id="noEntriesWarning">
+      <div class="empty-state" style="padding:var(--sp-8) var(--sp-6)">
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9"  x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="empty-state-title" data-i18n="noEntries">No entries to export.</div>
+        <div class="empty-state-desc">
+          Add expense or fuel entries first, then come back to export.
+        </div>
+        <div class="flex gap-2">
+          <a href="add-expense.html" class="btn btn-primary btn-sm">
+            <span data-i18n="addExpense">+ Add Expense</span>
+          </a>
+          <a href="add-fuel.html" class="btn btn-secondary btn-sm">
+            <span data-i18n="addFuel">+ Add Fuel</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =====================================================================
+         EXPORT ACTIONS CARD
+    ====================================================================== -->
+    <div class="card" id="exportActionsCard">
+      <div class="card-header">
+        <h2 class="card-title">
+          <svg class="card-title-icon" width="18" height="18" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span data-i18n="exportSummary">Export Report</span>
+        </h2>
+      </div>
+
+      <!-- Export checklist -->
+      <div class="export-checklist" id="exportChecklist">
+
+        <div class="checklist-item" id="checkExpenses">
+          <div class="checklist-icon" id="checkExpensesIcon" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="3"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span id="checkExpensesLabel">Expense entries ready</span>
+        </div>
+
+        <div class="checklist-item" id="checkFuel">
+          <div class="checklist-icon" id="checkFuelIcon" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="3"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span id="checkFuelLabel">Fuel entries ready</span>
+        </div>
+
+      </div>
+
+      <!-- Export buttons -->
+      <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+
+        <!-- Excel button -->
+        <div>
+          <button
+            type="button"
+            class="export-btn export-btn-excel"
+            id="btnExportExcel"
+            onclick="exportExcel()"
+            aria-label="Export Excel spreadsheet"
+          >
+            <div class="export-btn-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="8" y1="13" x2="16" y2="13"></line>
+                <line x1="8" y1="17" x2="16" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="export-btn-body">
+              <div class="export-btn-title" data-i18n="exportExcel">Export Excel (.xlsx)</div>
+              <div class="export-btn-sub">3 sheets: Expenses, Fuel, List</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 class="icon-directional" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <!-- Inline success message -->
+          <div class="export-success hidden" id="successExcel" role="status">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Saved as <code id="filenameExcel"></code></span>
+          </div>
+        </div>
+
+        <!-- JSON button -->
+        <div>
+          <button
+            type="button"
+            class="export-btn export-btn-json"
+            id="btnExportJson"
+            onclick="exportJson()"
+            aria-label="Export JSON file"
+          >
+            <div class="export-btn-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+            </div>
+            <div class="export-btn-body">
+              <div class="export-btn-title" data-i18n="exportJson">Export JSON</div>
+              <div class="export-btn-sub">For coordinator import</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 class="icon-directional" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <!-- Inline success message -->
+          <div class="export-success hidden" id="successJson" role="status">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Saved as <code id="filenameJson"></code></span>
+          </div>
+        </div>
+
+      </div><!-- /export buttons -->
+
+    </div><!-- /exportActionsCard -->
+
+
+    <!-- =====================================================================
+         DANGER ZONE — Clear All Entries
+    ====================================================================== -->
+    <div class="card danger-zone-card mt-5">
+
+      <div class="card-header">
+        <h2 class="danger-zone-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9"  x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          Danger Zone
+        </h2>
+      </div>
+
+      <p class="danger-zone-desc" data-i18n="clearAfterExport">
+        Use this only <strong>after your coordinator has confirmed receipt</strong>
+        of the exported file. This will permanently delete all entries
+        from this device.
+      </p>
+
+      <!-- Safety gate: type "CLEAR" to enable the button -->
+      <div class="clear-gate">
+        <div class="form-group">
+          <label class="form-label" for="clearInput">
+            Type <strong>CLEAR</strong> to enable
+          </label>
+          <input
+            type="text"
+            id="clearInput"
+            class="form-input"
+            placeholder="CLEAR"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            aria-describedby="clearHint"
+          />
+          <span class="form-hint" id="clearHint">
+            Exact spelling required — clears all expenses and fuel entries
+          </span>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-ghost-danger"
+          id="btnClearAll"
+          disabled
+          onclick="clearAllEntries()"
+          aria-label="Clear all entries permanently"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14H6L5 6"></path>
+            <path d="M10 11v6"></path><path d="M14 11v6"></path>
+            <path d="M9 6V4h6v2"></path>
+          </svg>
+          <span data-i18n="clear">Clear All Entries</span>
+        </button>
+      </div>
+
+    </div><!-- /danger-zone-card -->
+
+  </main><!-- /main -->
+
+
+  <!-- =======================================================================
+       BOTTOM NAVIGATION — Export tab active
+  ======================================================================== -->
+  <nav class="bottom-nav" role="navigation" aria-label="App navigation">
+
+    <a href="index.html" class="bottom-nav-item" aria-label="Dashboard">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span data-i18n="dashboard">Dashboard</span>
+    </a>
+
+    <a href="add-expense.html" class="bottom-nav-item" aria-label="Add Expense">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="12" y1="18" x2="12" y2="12"></line>
+        <line x1="9" y1="15" x2="15" y2="15"></line>
+      </svg>
+      <span data-i18n="addExpense">Add Expense</span>
+    </a>
+
+    <a href="add-fuel.html" class="bottom-nav-item" aria-label="Add Fuel">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+        <path d="M3 22h18"></path>
+        <rect x="7" y="14" width="4" height="8"></rect>
+        <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+      </svg>
+      <span data-i18n="addFuel">Add Fuel</span>
+    </a>
+
+    <a href="my-entries.html" class="bottom-nav-item" aria-label="My Entries">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8"  y1="6"  x2="21" y2="6"></line>
+        <line x1="8"  y1="12" x2="21" y2="12"></line>
+        <line x1="8"  y1="18" x2="21" y2="18"></line>
+        <line x1="3"  y1="6"  x2="3.01" y2="6"></line>
+        <line x1="3"  y1="12" x2="3.01" y2="12"></line>
+        <line x1="3"  y1="18" x2="3.01" y2="18"></line>
+      </svg>
+      <span data-i18n="myEntries">My Entries</span>
+    </a>
+
+    <a href="export.html" class="bottom-nav-item active" aria-current="page" aria-label="Export">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span data-i18n="export">Export</span>
+    </a>
+
+  </nav><!-- /bottom-nav -->
+
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="../shared/js/excel-export.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/expenses.js"></script>
+  <script src="js/fuel.js"></script>
+  <script src="js/export.js"></script>
+
+  <!-- Page init -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    /* Populate summary from storage */
+    if (typeof initExportPage === 'function') {
+      initExportPage();
+    }
+
+    /* CLEAR safety gate — enable button only when input matches exactly */
+    const clearInput = document.getElementById('clearInput');
+    const btnClear   = document.getElementById('btnClearAll');
+
+    if (clearInput && btnClear) {
+      clearInput.addEventListener('input', function () {
+        const enabled = this.value === 'CLEAR';
+        btnClear.disabled = !enabled;
+        /* Visual feedback on the input */
+        if (enabled) {
+          this.style.borderColor = 'var(--color-danger)';
+          this.style.boxShadow   = '0 0 0 3px var(--color-danger-bg)';
+        } else {
+          this.style.borderColor = '';
+          this.style.boxShadow   = '';
+        }
+      });
+    }
+
+  });
+  </script>
+
+</body>
+</html>
