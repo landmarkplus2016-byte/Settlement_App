@@ -32,6 +32,52 @@ function buildFilename(extension) {
    LOAD SUMMARY — populate all page elements from storage
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Date-range filter helpers
+   -------------------------------------------------------------------------- */
+
+/* Returns the from/to values from the date picker inputs (YYYY-MM-DD or ''). */
+function _getDateRange() {
+  return {
+    from: (document.getElementById('fieldFromDate') || {}).value || '',
+    to:   (document.getElementById('fieldToDate')   || {}).value || '',
+  };
+}
+
+/* Filter an entries array to those whose date falls within [from, to].
+   Both bounds are inclusive; an empty bound means open-ended.
+   Entry dates are stored as "16-Apr-2026" — converted to YYYY-MM-DD via
+   toDatePickerValue() for lexicographic comparison. */
+function _filterByDateRange(entries, from, to) {
+  if (!from && !to) return entries;
+  return entries.filter(function (e) {
+    var d = toDatePickerValue(e.date);
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
+}
+
+/* Auto-populate the date picker inputs to the span covered by existing entries.
+   Only sets values if both inputs are currently empty. */
+function _autoFillDateRange(expenses, fuel) {
+  var fromEl = document.getElementById('fieldFromDate');
+  var toEl   = document.getElementById('fieldToDate');
+  if (!fromEl || !toEl) return;
+  if (fromEl.value || toEl.value) return; /* user already set them */
+
+  var all = expenses.concat(fuel);
+  var minD = '', maxD = '';
+  all.forEach(function (e) {
+    var d = toDatePickerValue(e.date);
+    if (!d) return;
+    if (!minD || d < minD) minD = d;
+    if (!maxD || d > maxD) maxD = d;
+  });
+  if (minD) fromEl.value = minD;
+  if (maxD) toEl.value   = maxD;
+}
+
 function loadExportSummary() {
   const settings = getSettings() || {};
   const expenses = getExpenses();
@@ -43,6 +89,9 @@ function loadExportSummary() {
   _setText('exportName',     settings.name   || '—');
   _setText('exportMobile',   settings.mobile || '—');
   _setText('exportTracking', 'T-' + (settings.trackingNumber || '—'));
+
+  /* ---- Auto-fill date range from entries ---- */
+  _autoFillDateRange(expenses, fuel);
 
   /* ---- Expense stats ---- */
   const expenseTotal = expenses.reduce(function (s, e) {
@@ -91,8 +140,9 @@ function triggerExcelExport() {
   const settings = getSettings();
   if (!settings) { showToast('Settings required.', 'error'); return; }
 
-  const expenses = getExpenses();
-  const fuel     = getFuelEntries();
+  const range    = _getDateRange();
+  const expenses = _filterByDateRange(getExpenses(),      range.from, range.to);
+  const fuel     = _filterByDateRange(getFuelEntries(),   range.from, range.to);
   const filename = buildFilename('xlsx');
   const lang     = localStorage.getItem('lang') || DEFAULT_LANG;
   const t        = TRANSLATIONS[lang] || TRANSLATIONS[DEFAULT_LANG];
@@ -122,8 +172,9 @@ function triggerJSONExport() {
   const settings = getSettings();
   if (!settings) { showToast('Settings required.', 'error'); return; }
 
-  const expenses = getExpenses();
-  const fuel     = getFuelEntries();
+  const range    = _getDateRange();
+  const expenses = _filterByDateRange(getExpenses(),      range.from, range.to);
+  const fuel     = _filterByDateRange(getFuelEntries(),   range.from, range.to);
   const filename = buildFilename('json');
   const lang     = localStorage.getItem('lang') || DEFAULT_LANG;
   const t        = TRANSLATIONS[lang] || TRANSLATIONS[DEFAULT_LANG];

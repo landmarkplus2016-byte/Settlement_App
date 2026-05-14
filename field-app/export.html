@@ -367,6 +367,47 @@
 
 
     <!-- =====================================================================
+         DATE RANGE FILTER CARD
+    ====================================================================== -->
+    <div class="card" id="dateRangeCard">
+      <div class="card-header">
+        <h2 class="card-title">
+          <svg class="card-title-icon" width="18" height="18" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8"  y1="2" x2="8"  y2="6"></line>
+            <line x1="3"  y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span data-i18n="dateRange">Date Range</span>
+        </h2>
+      </div>
+
+      <div class="grid-2">
+
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="fieldFromDate">
+            <span data-i18n="fromDate">From</span>
+          </label>
+          <input type="date" id="fieldFromDate" class="form-input ltr-field" />
+        </div>
+
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="fieldToDate">
+            <span data-i18n="toDate">To</span>
+          </label>
+          <input type="date" id="fieldToDate" class="form-input ltr-field" />
+        </div>
+
+      </div>
+      <p class="form-hint" style="margin-top:var(--sp-3)">
+        <span data-i18n="dateRangeHint">Leave both empty to export all entries.</span>
+      </p>
+    </div>
+
+
+    <!-- =====================================================================
          NO ENTRIES WARNING (hidden when entries exist)
     ====================================================================== -->
     <div class="card no-entries-card hidden" id="noEntriesWarning">

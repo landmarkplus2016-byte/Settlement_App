@@ -22,7 +22,6 @@ function generateFieldExcel(settings, expenses, fuel) {
 
   XLSX.utils.book_append_sheet(wb, _buildExpensesSheet(settings, expenses), 'Expenses Tracking');
   XLSX.utils.book_append_sheet(wb, _buildFuelSheet(settings, fuel),         'Fuel Tracking');
-  XLSX.utils.book_append_sheet(wb, _buildListSheet(settings),               'List');
 
   return wb;
 }
@@ -82,14 +81,13 @@ function generateFieldJSON(settings, expenses, fuel) {
 
 /* ==========================================================================
    PRIVATE — EXPENSES SHEET
-   Columns A–P (16 cols, index 0–15):
+   Columns A–J (10 cols, index 0–9):
    (blank), (blank), Project name, Site ID, Job Code,
-   Category, Item Description, Amount, Comment, Coordinator,
-   Tracking #, Name, Site Count, Category2, Sub Category, Date
+   Category, Item Description, Amount, Comment, Coordinator
    ========================================================================== */
 
 function _buildExpensesSheet(settings, expenses) {
-  const NCOLS   = 16;
+  const NCOLS   = 10;
   const expTotal = expenses.reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
 
   const rows = [];
@@ -107,39 +105,31 @@ function _buildExpensesSheet(settings, expenses) {
     3: 'Total:',
     4: expTotal,
   }));
-  rows.push(new Array(NCOLS).fill('')); // blank spacer
+  rows.push(new Array(NCOLS).fill(''));
 
   /* ---- Row 4: column headers ---- */
   rows.push([
     '', '',
     'Project name', 'Site ID', 'Job Code',
-    'Category', 'Item Description', 'Amount', 'Comment',
-    'Coordinator', 'Tracking #', 'Name', 'Site Count',
-    'Category2', 'Sub Category', 'Date',
+    'Category', 'Item Description', 'Amount', 'Comment', 'Coordinator',
   ]);
 
   /* ---- Rows 5+: data ---- */
   expenses.forEach(function (e) {
     rows.push([
       '', '',
-      e.projectName    || '',
-      e.siteId         || '',
-      e.jobCode        || '',
-      e.category       || '',
+      e.projectName     || '',
+      e.siteId          || '',
+      e.jobCode         || '',
+      e.category        || '',
       e.itemDescription || '',
       parseFloat(e.amount) || 0,
-      e.comment        || '',
-      e.coordinator    || '',
-      e.trackingNumber || settings.trackingNumber || 0,
-      settings.name    || '',
-      1,                          /* Site Count — one site per entry */
-      e.category       || '',     /* Category2 */
-      e.subCategory    || '',
-      e.date           || '',
+      e.comment         || '',
+      e.coordinator     || '',
     ]);
   });
 
-  rows.push(new Array(NCOLS).fill('')); /* blank after data */
+  rows.push(new Array(NCOLS).fill(''));
 
   /* ---- Approval footer ---- */
   _pushApprovalFooter(rows, settings, NCOLS);
@@ -148,29 +138,37 @@ function _buildExpensesSheet(settings, expenses) {
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   ws['!merges'] = [
-    /* Title row spans all columns */
     { s: { r: 0, c: 0 }, e: { r: 0, c: NCOLS - 1 } },
-    /* Account row partial merges */
     { s: { r: 1, c: 0 }, e: { r: 1, c: 0 } },
-    /* Name row partial merges */
     { s: { r: 2, c: 1 }, e: { r: 2, c: 2 } },
   ];
 
-  ws['!cols'] = _expenseColWidths();
+  ws['!cols'] = [
+    { wch: 4  }, /* A blank */
+    { wch: 4  }, /* B blank */
+    { wch: 14 }, /* C Project name */
+    { wch: 10 }, /* D Site ID */
+    { wch: 10 }, /* E Job Code */
+    { wch: 18 }, /* F Category */
+    { wch: 30 }, /* G Item Description */
+    { wch: 12 }, /* H Amount */
+    { wch: 24 }, /* I Comment */
+    { wch: 18 }, /* J Coordinator */
+  ];
 
   return ws;
 }
 
 /* ==========================================================================
    PRIVATE — FUEL SHEET
-   Columns A–T (20 cols, index 0–19):
+   Columns A–N (14 cols, index 0–13):
    (blank), (blank), Project name, Site ID, Job Code,
-   Start KM, End KM, Fuel Amount, Area, Driver, City, Karta Amount, Comment,
-   Coordinator, Tracking #, Name, Site Count, Category2, Sub Category, Date
+   Start KM, End KM, Fuel Amount, Area, Driver, City, Karta Amount,
+   Comment, Coordinator
    ========================================================================== */
 
 function _buildFuelSheet(settings, fuel) {
-  const NCOLS    = 20;
+  const NCOLS    = 14;
   const fuelTotal  = fuel.reduce(function (s, e) { return s + (parseFloat(e.fuelAmount)  || 0); }, 0);
   const kartaTotal = fuel.reduce(function (s, e) { return s + (parseFloat(e.kartaAmount) || 0); }, 0);
 
@@ -200,8 +198,7 @@ function _buildFuelSheet(settings, fuel) {
     '', '',
     'Project name', 'Site ID', 'Job Code',
     'Start KM', 'End KM', 'Fuel Amount', 'Area', 'Driver', 'City',
-    'Karta Amount', 'Comment', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
-    'Category2', 'Sub Category', 'Date',
+    'Karta Amount', 'Comment', 'Coordinator',
   ]);
 
   /* ---- Rows 5+: data ---- */
@@ -222,12 +219,6 @@ function _buildFuelSheet(settings, fuel) {
       parseFloat(e.kartaAmount) || 0,
       e.comment        || '',
       e.coordinator    || '',
-      e.trackingNumber || settings.trackingNumber || 0,
-      settings.name    || '',
-      1,               /* Site Count */
-      '',              /* Category2 — not applicable to fuel */
-      '',              /* Sub Category — not applicable */
-      e.date           || '',
     ]);
   });
 
@@ -244,42 +235,21 @@ function _buildFuelSheet(settings, fuel) {
     { s: { r: 2, c: 1 }, e: { r: 2, c: 2 } },
   ];
 
-  ws['!cols'] = _fuelColWidths();
-
-  return ws;
-}
-
-/* ==========================================================================
-   PRIVATE — LIST SHEET
-   Columns: Project, PC, Category, Name
-   ========================================================================== */
-
-function _buildListSheet(settings) {
-  const projects   = LISTS.projects;
-  const categories = LISTS.categories;
-  const accounts   = LISTS.accountTypes;
-
-  const rows = [];
-  rows.push(['Project', 'PC', 'Category', 'Name']);
-
-  const maxRows = Math.max(projects.length, categories.length, accounts.length);
-
-  for (var i = 0; i < maxRows; i++) {
-    rows.push([
-      projects[i]   !== undefined ? projects[i]   : '',
-      accounts[i]   !== undefined ? accounts[i]   : '',
-      categories[i] !== undefined ? categories[i] : '',
-      i === 0 ? (settings.name || '') : '',
-    ]);
-  }
-
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-
   ws['!cols'] = [
-    { wch: 14 },  /* Project */
-    { wch: 8 },   /* PC */
-    { wch: 22 },  /* Category */
-    { wch: 30 },  /* Name */
+    { wch: 4  }, /* A blank */
+    { wch: 4  }, /* B blank */
+    { wch: 14 }, /* C Project name */
+    { wch: 10 }, /* D Site ID */
+    { wch: 10 }, /* E Job Code */
+    { wch: 11 }, /* F Start KM */
+    { wch: 11 }, /* G End KM */
+    { wch: 12 }, /* H Fuel Amount */
+    { wch: 12 }, /* I Area */
+    { wch: 16 }, /* J Driver */
+    { wch: 14 }, /* K City */
+    { wch: 12 }, /* L Karta Amount */
+    { wch: 24 }, /* M Comment */
+    { wch: 18 }, /* N Coordinator */
   ];
 
   return ws;
