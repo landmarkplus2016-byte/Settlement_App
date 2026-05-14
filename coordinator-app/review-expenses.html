@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Coordinator — Review Expenses" />
+  <title>Review Expenses — ExpenseFuel Coordinator</title>
+
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Page-scoped
+    ----------------------------------------------------------------------- */
+
+    /* Navbar inline nav links */
+    .coord-nav-link {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .coord-nav-link:hover  { color: var(--color-primary); background: var(--color-primary-subtle); }
+    .coord-nav-link.active { color: var(--color-primary); font-weight: 600; }
+
+    /* Override toolbar top — this page has no tab bar, only the 60px navbar */
+    .review-toolbar { top: 70px; }
+
+    /* Validation banner */
+    .validation-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-4);
+      padding: var(--sp-4) var(--sp-5);
+      background: var(--color-warning-bg);
+      border: 1px solid #fde68a;
+      border-left: 4px solid var(--color-warning);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--sp-4);
+    }
+    [dir="rtl"] .validation-banner {
+      border-left: 1px solid #fde68a;
+      border-right: 4px solid var(--color-warning);
+    }
+
+    .validation-banner-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fef3c7;
+      color: var(--color-warning);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .validation-banner-body { flex: 1; min-width: 0; }
+
+    .validation-banner-title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: var(--sp-2);
+    }
+
+    .validation-issue-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .validation-issue-list li {
+      font-size: var(--text-sm);
+      color: #a16207;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-2);
+      line-height: 1.4;
+    }
+
+    .validation-issue-list li::before {
+      content: '·';
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Table: status select */
+    .status-select {
+      padding: 4px 8px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      background: var(--color-surface);
+      cursor: pointer;
+      transition: border-color var(--transition);
+      min-width: 100px;
+    }
+
+    .status-select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .status-select.status-approved { color: var(--color-success); border-color: #a7f3d0; background: var(--color-success-bg); }
+    .status-select.status-flagged  { color: var(--color-danger);  border-color: #fecaca; background: var(--color-danger-bg);  }
+    .status-select.status-pending  { color: var(--color-text-secondary); }
+
+    /* Table: note input */
+    .note-input {
+      width: 100%;
+      min-width: 120px;
+      padding: 4px 8px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      color: var(--color-text-primary);
+      background: var(--color-surface);
+      transition: border-color var(--transition);
+    }
+
+    .note-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    /* Row number — muted */
+    .row-num {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    /* Amount cell — always LTR */
+    .amount-cell {
+      font-weight: 600;
+      color: var(--color-primary);
+      direction: ltr;
+      white-space: nowrap;
+    }
+
+    /* Issue dot on a row that has validation errors */
+    .has-issues td:first-child::after {
+      content: '!';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-warning);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    /* Truncate long description cells */
+    .desc-cell {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Empty + error states */
+    .page-error-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--sp-4);
+      padding: var(--sp-10) var(--sp-6);
+    }
+
+    .page-error-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Bottom save bar */
+    .bottom-save-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--sp-3);
+      padding: var(--sp-4) 0;
+      margin-top: var(--sp-2);
+      border-top: 1px solid var(--color-border);
+    }
+  </style>
+</head>
+
+<body class="coord-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="coord-navbar-brand">
+      <a href="index.html" class="page-back-btn" aria-label="Back to dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+      <span class="coord-navbar-title">ExpenseFuel — Coordinator</span>
+      <span class="coord-role-chip">Coordinator</span>
+    </div>
+
+    <div class="navbar-actions">
+      <a href="index.html"    class="coord-nav-link" data-i18n="dashboard">Dashboard</a>
+      <a href="import.html"   class="coord-nav-link" data-i18n="import">Import</a>
+      <a href="settings.html" class="coord-nav-link" data-i18n="settings">Settings</a>
+
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content" id="mainContent">
+
+    <!-- Error state (import not found) -->
+    <div id="pageErrorSection" class="hidden">
+      <div class="card">
+        <div class="page-error-card">
+          <div class="page-error-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div style="font-size:var(--text-xl);font-weight:700;color:var(--color-text-primary)">
+            Report Not Found
+          </div>
+          <p style="font-size:var(--text-base);color:var(--color-text-secondary);max-width:320px;line-height:1.6">
+            The import ID in the URL does not match any saved report.
+          </p>
+          <a href="index.html" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main review content -->
+    <div id="reviewContent" class="hidden">
+
+      <!-- Page header -->
+      <div class="page-header" style="margin-bottom:var(--sp-4)">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap">
+            <h1 class="page-title" id="pageTitle" style="margin:0">Expense Review</h1>
+            <span class="tracking-chip hidden" id="trackingChip"></span>
+          </div>
+          <div style="font-size:var(--text-sm);color:var(--color-text-secondary);margin-top:4px" id="pageSubtitle"></div>
+        </div>
+        <!-- Link to fuel review for the same import -->
+        <a id="switchToFuelBtn" href="#" class="btn btn-secondary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+            <path d="M3 22h18"></path>
+            <rect x="7" y="14" width="4" height="8"></rect>
+            <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+          </svg>
+          <span data-i18n="reviewFuel">Review Fuel</span>
+        </a>
+      </div>
+
+      <!-- Auto-validation banner -->
+      <div id="validationBanner" class="validation-banner hidden" role="alert" aria-live="polite">
+        <div class="validation-banner-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="validation-banner-body">
+          <div class="validation-banner-title" id="validationBannerTitle"></div>
+          <ul class="validation-issue-list" id="validationIssueList"></ul>
+        </div>
+      </div>
+
+      <!-- Review toolbar -->
+      <div class="review-toolbar" id="reviewToolbar" role="toolbar" aria-label="Review actions">
+        <div class="review-toolbar-left">
+          <div class="toolbar-progress">
+            <div class="toolbar-progress-bar" role="progressbar"
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                 id="toolbarProgressBar">
+              <div class="toolbar-progress-fill" id="toolbarProgressFill" style="width:0%"></div>
+            </div>
+            <span class="toolbar-progress-text" id="toolbarProgressText">0 / 0 reviewed</span>
+          </div>
+        </div>
+
+        <div class="review-toolbar-right">
+          <button type="button" class="toolbar-bulk-approve" id="btnApproveAll">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span data-i18n="approveAll">Approve All</span>
+          </button>
+
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveReviews">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span data-i18n="saveReviews">Save Reviews</span>
+          </button>
+        </div>
+      </div><!-- /review-toolbar -->
+
+      <!-- Expenses table card -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="table review-table" id="expenseTable" aria-label="Expenses review table">
+            <thead>
+              <tr>
+                <th style="width:40px" aria-label="Row number">#</th>
+                <th data-i18n="date">Date</th>
+                <th data-i18n="project">Project</th>
+                <th data-i18n="siteId">Site ID</th>
+                <th data-i18n="jobCode">Job Code</th>
+                <th data-i18n="category">Category</th>
+                <th data-i18n="description">Description</th>
+                <th data-i18n="amount">Amount</th>
+                <th style="min-width:110px" data-i18n="pending">Status</th>
+                <th style="min-width:160px" data-i18n="comment">Note</th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody">
+              <!-- Populated by inline script -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state -->
+        <div id="expenseEmptyState" class="hidden"
+             style="padding:var(--sp-10) var(--sp-6);text-align:center;color:var(--color-text-muted)">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round"
+               style="margin-bottom:var(--sp-3);opacity:.4" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <div data-i18n="noEntries">No expense entries in this report.</div>
+        </div>
+      </div><!-- /table card -->
+
+      <!-- Bottom save bar -->
+      <div class="bottom-save-bar">
+        <a href="index.html" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span data-i18n="back">Back</span>
+        </a>
+        <button type="button" class="btn btn-primary" id="btnSaveReviewsBottom">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          <span data-i18n="saveReviews">Save Reviews</span>
+        </button>
+      </div>
+
+    </div><!-- /reviewContent -->
+
+  </main><!-- /main -->
+
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/review.js"></script>
+
+</body>
+</html>
