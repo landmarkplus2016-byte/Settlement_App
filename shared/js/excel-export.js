@@ -406,3 +406,372 @@ function buildExportFilename(settings, month, year, ext) {
   const yr          = year  || new Date().getFullYear();
   return safeName + '_T' + tracking + '_' + mon + yr + '.' + (ext || 'xlsx');
 }
+
+/* ==========================================================================
+   COORDINATOR EXPORT — generateCoordinatorExcel(importData, reviewData)
+
+   importData  — the object stored under 'imported_[id]' in localStorage
+   reviewData  — the object stored under 'review_[id]':
+                 { [entryId]: { status, coordinatorNote, reviewedAt } }
+
+   Returns a SheetJS workbook. Caller downloads via triggerExcelDownload().
+   ========================================================================== */
+
+function generateCoordinatorExcel(importData, reviewData) {
+  if (typeof XLSX === 'undefined') {
+    throw new Error('SheetJS (XLSX) must be loaded before excel-export.js');
+  }
+
+  var review  = reviewData  || {};
+  var member  = (importData && importData.teamMember) || {};
+  var allExp  = (importData && importData.expenses)   || [];
+  var allFuel = (importData && importData.fuel)       || [];
+
+  /* ---- Partition by status ---- */
+  var approvedExpenses = allExp.filter(function (e) {
+    var rd = review[e.id];
+    return rd && rd.status === 'approved';
+  });
+
+  var approvedFuel = allFuel.filter(function (f) {
+    var rd = review[f.id];
+    return rd && rd.status === 'approved';
+  });
+
+  var flaggedExpenses = allExp.filter(function (e) {
+    var rd = review[e.id];
+    return rd && rd.status === 'flagged';
+  });
+
+  var flaggedFuel = allFuel.filter(function (f) {
+    var rd = review[f.id];
+    return rd && rd.status === 'flagged';
+  });
+
+  /* Pseudo-settings from import data — keeps _buildExpensesSheet compatible */
+  var pseudoSettings = {
+    name:           member.name           || '',
+    mobile:         member.mobile         || '',
+    trackingNumber: member.trackingNumber || importData.trackingNumber || 0,
+    accountType:    member.accountType    || 'New',
+  };
+
+  /* ---- Read coordinator's own name from localStorage (browser-only) ---- */
+  var coordName = '';
+  try {
+    var cs = localStorage.getItem('coord_settings');
+    if (cs) coordName = (JSON.parse(cs).name || '');
+  } catch (e) { /* ignore */ }
+
+  /* ---- Build workbook ---- */
+  var wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    _buildCoordExpensesSheet(pseudoSettings, approvedExpenses, review),
+    'Expenses Tracking'
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    _buildCoordFuelSheet(pseudoSettings, approvedFuel, review),
+    'Fuel Tracking'
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    _buildFlaggedSheet(flaggedExpenses, flaggedFuel, review),
+    'Flagged Entries'
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    _buildSummarySheet(importData, approvedExpenses, approvedFuel, flaggedExpenses.length + flaggedFuel.length, coordName),
+    'Summary'
+  );
+
+  return wb;
+}
+
+/* --------------------------------------------------------------------------
+   _buildCoordExpensesSheet — approved expenses + Coordinator Notes column
+   Columns A–S (19 cols, 0–18): same as field export + col 18 = Coord Notes
+   -------------------------------------------------------------------------- */
+
+function _buildCoordExpensesSheet(settings, expenses, reviewData) {
+  const NCOLS    = 19;
+  const expTotal = expenses.reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+
+  const rows = [];
+
+  /* Header block (rows 0-3) */
+  rows.push(_blankRow(NCOLS, { 0: 'Expenses Tracking — Approved Only' }));
+  rows.push(_blankRow(NCOLS, {
+    0: 'Account:', 1: settings.accountType || 'New', 5: 'VF',
+  }));
+  rows.push(_blankRow(NCOLS, {
+    0: 'Name:', 1: settings.name || '', 3: 'New', 5: 'Total:', 6: expTotal,
+  }));
+  rows.push(new Array(NCOLS).fill(''));
+
+  /* Column headers (row 4) */
+  rows.push([
+    '', '',
+    'Month', 'Day', 'Project name', 'Site ID', 'Job Code',
+    'Category', 'Item Description', 'Amount', 'Comment',
+    'Coordinator', 'Tracking #', 'Name', 'Site Count',
+    'Category2', 'Sub Category', 'Date',
+    'Coordinator Notes',
+  ]);
+
+  /* Data rows (row 5+) */
+  expenses.forEach(function (e) {
+    const note = (reviewData[e.id] && reviewData[e.id].coordinatorNote) || '';
+    rows.push([
+      '', '',
+      e.month          || '',
+      typeof e.day === 'number' ? e.day : (parseInt(e.day, 10) || ''),
+      e.projectName    || '',
+      e.siteId         || '',
+      e.jobCode        || '',
+      e.category       || '',
+      e.itemDescription || '',
+      parseFloat(e.amount) || 0,
+      e.comment        || '',
+      e.coordinator    || '',
+      e.trackingNumber || settings.trackingNumber || 0,
+      settings.name    || '',
+      1,
+      e.category       || '',
+      e.subCategory    || '',
+      e.date           || '',
+      note,
+    ]);
+  });
+
+  rows.push(new Array(NCOLS).fill(''));
+  _pushApprovalFooter(rows, settings, NCOLS);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: NCOLS - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 0 } },
+    { s: { r: 2, c: 1 }, e: { r: 2, c: 2 } },
+  ];
+
+  /* Column widths — same as field + coord notes */
+  ws['!cols'] = _expenseColWidths().concat([{ wch: 30 }]);
+
+  return ws;
+}
+
+/* --------------------------------------------------------------------------
+   _buildCoordFuelSheet — approved fuel + Coordinator Notes column
+   Columns A–V (22 cols, 0–21): same as field fuel export + col 21 = Coord Notes
+   -------------------------------------------------------------------------- */
+
+function _buildCoordFuelSheet(settings, fuel, reviewData) {
+  const NCOLS    = 22;
+  const fuelTotal  = fuel.reduce(function (s, e) { return s + (parseFloat(e.fuelAmount)  || 0); }, 0);
+  const kartaTotal = fuel.reduce(function (s, e) { return s + (parseFloat(e.kartaAmount) || 0); }, 0);
+
+  const rows = [];
+
+  /* Header block */
+  rows.push(_blankRow(NCOLS, { 0: 'Fuel Tracking — Approved Only' }));
+  rows.push(_blankRow(NCOLS, {
+    0: 'Account:', 1: settings.accountType || 'New', 5: 'VF',
+  }));
+  rows.push(_blankRow(NCOLS, {
+    0: 'Name:', 1: settings.name || '',
+    3: 'New Fuel:', 4: fuelTotal,
+    6: 'Karta:', 7: kartaTotal,
+    9: 'Total:', 10: fuelTotal + kartaTotal,
+  }));
+  rows.push(new Array(NCOLS).fill(''));
+
+  /* Column headers */
+  rows.push([
+    '', '',
+    'Month', 'Day', 'Project name', 'Site ID', 'Job Code',
+    'Start KM', 'End KM', 'Fuel Amount', 'Area', 'Driver', 'City',
+    'Karta Amount', 'Coordinator', 'Tracking #', 'Name', 'Site Count',
+    'Category2', 'Sub Category', 'Date',
+    'Coordinator Notes',
+  ]);
+
+  /* Data rows */
+  fuel.forEach(function (e) {
+    const note    = (reviewData[e.id] && reviewData[e.id].coordinatorNote) || '';
+    const startKm = parseFloat(e.startKm) || 0;
+    const endKm   = parseFloat(e.endKm)   || 0;
+    rows.push([
+      '', '',
+      e.month          || '',
+      typeof e.day === 'number' ? e.day : (parseInt(e.day, 10) || ''),
+      e.projectName    || '',
+      e.siteId         || '',
+      e.jobCode        || '',
+      startKm,
+      endKm,
+      parseFloat(e.fuelAmount)  || 0,
+      e.area           || '',
+      e.driver         || '',
+      e.city           || '',
+      parseFloat(e.kartaAmount) || 0,
+      e.coordinator    || '',
+      e.trackingNumber || settings.trackingNumber || 0,
+      settings.name    || '',
+      1,
+      '',
+      '',
+      e.date           || '',
+      note,
+    ]);
+  });
+
+  rows.push(new Array(NCOLS).fill(''));
+  _pushApprovalFooter(rows, settings, NCOLS);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: NCOLS - 1 } },
+    { s: { r: 2, c: 1 }, e: { r: 2, c: 2 } },
+  ];
+
+  ws['!cols'] = _fuelColWidths().concat([{ wch: 30 }]);
+
+  return ws;
+}
+
+/* --------------------------------------------------------------------------
+   _buildFlaggedSheet — all flagged expenses + fuel in one combined table
+   Columns: Type | Date | Project | Site ID | Category/Area | Amount/Fuel | Note
+   -------------------------------------------------------------------------- */
+
+function _buildFlaggedSheet(flaggedExpenses, flaggedFuel, reviewData) {
+  const rows = [];
+
+  rows.push(['Flagged Entries — Excluded from Export']);
+  rows.push([]);
+  rows.push(['Type', 'Date', 'Project', 'Site ID', 'Category / Area', 'Amount / Fuel (EGP)', 'Coordinator Note']);
+
+  flaggedExpenses.forEach(function (e) {
+    const note = (reviewData[e.id] && reviewData[e.id].coordinatorNote) || '';
+    rows.push([
+      'Expense',
+      e.date        || '',
+      e.projectName || '',
+      e.siteId      || '',
+      e.category    || '',
+      parseFloat(e.amount) || 0,
+      note,
+    ]);
+  });
+
+  flaggedFuel.forEach(function (f) {
+    const note = (reviewData[f.id] && reviewData[f.id].coordinatorNote) || '';
+    rows.push([
+      'Fuel',
+      f.date        || '',
+      f.projectName || '',
+      f.siteId      || '',
+      f.area        || '',
+      parseFloat(f.fuelAmount) || 0,
+      note,
+    ]);
+  });
+
+  if (flaggedExpenses.length === 0 && flaggedFuel.length === 0) {
+    rows.push(['No flagged entries.', '', '', '', '', '', '']);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+  ];
+
+  ws['!cols'] = [
+    { wch: 10 }, /* Type */
+    { wch: 14 }, /* Date */
+    { wch: 14 }, /* Project */
+    { wch: 10 }, /* Site ID */
+    { wch: 18 }, /* Category / Area */
+    { wch: 20 }, /* Amount */
+    { wch: 35 }, /* Note */
+  ];
+
+  return ws;
+}
+
+/* --------------------------------------------------------------------------
+   _buildSummarySheet — one-page review summary
+   -------------------------------------------------------------------------- */
+
+function _buildSummarySheet(importData, approvedExpenses, approvedFuel, flaggedCount, coordName) {
+  var member   = (importData && importData.teamMember) || {};
+  var month    = (importData && importData.month)      || '';
+  var tracking = member.trackingNumber || (importData && importData.trackingNumber) || '';
+
+  var now    = new Date();
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var today  = now.getDate() + '-' + months[now.getMonth()] + '-' + now.getFullYear();
+
+  var expTotal   = approvedExpenses.reduce(function (s, e) { return s + (parseFloat(e.amount)     || 0); }, 0);
+  var fuelTotal  = approvedFuel.reduce(    function (s, f) { return s + (parseFloat(f.fuelAmount)  || 0); }, 0);
+  var kartaTotal = approvedFuel.reduce(    function (s, f) { return s + (parseFloat(f.kartaAmount) || 0); }, 0);
+
+  var rows = [
+    ['ExpenseFuel — Coordinator Review Summary'],
+    [],
+    ['Export Date:',     today],
+    ['Coordinator:',     coordName || '—'],
+    [],
+    ['Team Member:',     member.name || '—'],
+    ['Tracking Number:', tracking   || '—'],
+    ['Month:',           month      || '—'],
+    [],
+    ['',                  'Count',                               'Total (EGP)'],
+    ['Approved Expenses', approvedExpenses.length,               Math.round(expTotal   * 100) / 100],
+    ['Approved Fuel',     approvedFuel.length,                   Math.round(fuelTotal  * 100) / 100],
+    ['Approved Karta',    '—',                                   Math.round(kartaTotal * 100) / 100],
+    ['Flagged (Excluded)', flaggedCount,                         '—'],
+    [],
+    ['Total Approved Value', '', Math.round((expTotal + fuelTotal + kartaTotal) * 100) / 100],
+  ];
+
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+  ];
+
+  ws['!cols'] = [
+    { wch: 22 }, /* Label */
+    { wch: 10 }, /* Count */
+    { wch: 16 }, /* Total */
+  ];
+
+  return ws;
+}
+
+/* --------------------------------------------------------------------------
+   buildCoordinatorFilename(importData)
+   Returns "APPROVED_[MemberName]_T[TrackingNum]_[Month][Year].xlsx"
+   -------------------------------------------------------------------------- */
+
+function buildCoordinatorFilename(importData) {
+  var member   = (importData && importData.teamMember) || {};
+  var safeName = (member.name || 'Unknown').replace(/\s+/g, '_');
+  var tracking = member.trackingNumber || (importData && importData.trackingNumber) || 0;
+  var month    = (importData && importData.month)
+    || ((importData && importData.expenses && importData.expenses[0] && importData.expenses[0].month)
+      || (importData && importData.fuel && importData.fuel[0] && importData.fuel[0].month)
+      || 'unknown');
+  var year     = new Date().getFullYear();
+
+  return 'APPROVED_' + safeName + '_T' + tracking + '_' + month + year + '.xlsx';
+}
