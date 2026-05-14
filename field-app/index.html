@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Field — Dashboard" />
+  <title>Dashboard — ExpenseFuel Field</title>
+
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* Page-scoped only */
+    .section-heading {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--sp-3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .welcome-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-5);
+    }
+
+    .welcome-greeting {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1.2;
+    }
+
+    .welcome-sub {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Settings-required full card */
+    .settings-required-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--sp-4);
+      padding: var(--sp-10) var(--sp-6);
+    }
+
+    .settings-req-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-req-title {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .settings-req-desc {
+      font-size: var(--text-base);
+      color: var(--color-text-secondary);
+      max-width: 320px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body class="field-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="field-navbar-brand">
+      <span class="field-navbar-title" data-i18n="fieldAppTitle">ExpenseFuel — Field</span>
+      <span class="tracking-chip hidden" id="trackingChip" aria-label="Tracking number"></span>
+      <span class="settings-complete-indicator"
+            id="settingsIndicator"
+            aria-label="Settings status"></span>
+    </div>
+
+    <div class="navbar-actions">
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+      <a href="settings.html" class="navbar-icon-btn" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </a>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content" id="mainContent">
+
+    <!-- =====================================================================
+         STATE A — Settings incomplete (full-page prompt)
+         app.js also shows .warning-banner but dashboard uses this card instead.
+    ====================================================================== -->
+    <section id="sectionSettingsRequired" class="hidden" aria-live="polite">
+      <div class="card">
+        <div class="settings-required-card">
+
+          <div class="settings-req-icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+
+          <div class="settings-req-title" data-i18n="settings">Settings Required</div>
+
+          <p class="settings-req-desc" data-i18n="settingsRequired">
+            Please complete your settings before adding entries.
+          </p>
+
+          <a href="settings.html" class="btn btn-primary btn-lg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span data-i18n="settings">Go to Settings</span>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================================
+         STATE B — Dashboard (settings complete)
+    ====================================================================== -->
+    <section id="dashboardContent" class="hidden">
+
+      <!-- Welcome row -->
+      <div class="welcome-row">
+        <div>
+          <div class="welcome-greeting">
+            <span data-i18n="home" style="font-weight:400;font-size:var(--text-lg);color:var(--color-text-secondary)">Hello,</span>
+            <span id="welcomeName"> —</span>
+          </div>
+          <div class="welcome-sub" id="welcomeSub"></div>
+        </div>
+        <div class="dashboard-month-chip" id="monthChip" aria-label="Current month">— —</div>
+      </div>
+
+      <!-- ------------------------------------------------------------------
+           STAT TILES — 4 cards
+      ------------------------------------------------------------------- -->
+      <div class="dashboard-grid" role="list" aria-label="Summary statistics">
+
+        <!-- Total Expenses -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="statExpenseTotal">—</div>
+            <div class="stat-label" data-i18n="totalExpenses">Total Expenses</div>
+          </div>
+        </div>
+
+        <!-- Total Fuel -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+              <path d="M3 22h18"></path>
+              <rect x="7" y="14" width="4" height="8"></rect>
+              <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="statFuelTotal">—</div>
+            <div class="stat-label" data-i18n="totalFuel">Total Fuel</div>
+          </div>
+        </div>
+
+        <!-- Expense Entries count -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="statExpenseCount">0</div>
+            <div class="stat-label" data-i18n="expenseEntries">Expense Entries</div>
+          </div>
+        </div>
+
+        <!-- Fuel Entries count -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="statFuelCount">0</div>
+            <div class="stat-label" data-i18n="fuelEntries">Fuel Entries</div>
+          </div>
+        </div>
+
+      </div><!-- /dashboard-grid -->
+
+
+      <!-- ------------------------------------------------------------------
+           QUICK ACTIONS
+      ------------------------------------------------------------------- -->
+      <div class="section-heading">
+        <span data-i18n="quickActions">Quick Actions</span>
+      </div>
+
+      <div class="quick-actions mb-5" role="list">
+
+        <a href="add-expense.html" class="quick-action-btn" role="listitem">
+          <div class="quick-action-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+          </div>
+          <span class="quick-action-label" data-i18n="addExpense">Add Expense</span>
+        </a>
+
+        <a href="add-fuel.html" class="quick-action-btn" role="listitem">
+          <div class="quick-action-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+              <path d="M3 22h18"></path>
+              <rect x="7" y="14" width="4" height="8"></rect>
+              <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+            </svg>
+          </div>
+          <span class="quick-action-label" data-i18n="addFuel">Add Fuel</span>
+        </a>
+
+        <a href="my-entries.html" class="quick-action-btn" role="listitem">
+          <div class="quick-action-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6"  x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </div>
+          <span class="quick-action-label" data-i18n="myEntries">My Entries</span>
+        </a>
+
+        <a href="export.html" class="quick-action-btn" role="listitem">
+          <div class="quick-action-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <span class="quick-action-label" data-i18n="export">Export</span>
+        </a>
+
+      </div><!-- /quick-actions -->
+
+
+      <!-- ------------------------------------------------------------------
+           RECENT ENTRIES
+      ------------------------------------------------------------------- -->
+      <div class="section-heading">
+        <span data-i18n="recentEntries">Recent Entries</span>
+        <a href="my-entries.html" class="btn btn-ghost btn-sm" style="font-size:var(--text-xs)">
+          <span data-i18n="myEntries">View All</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+               class="icon-directional">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Populated by dashboard JS -->
+      <div class="recent-list-card" id="recentListContainer" aria-live="polite">
+        <div class="recent-list" id="recentList"></div>
+      </div>
+
+      <!-- Empty state — hidden while there are entries -->
+      <div class="card hidden" id="emptyStateEntries">
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <div class="empty-state-title" data-i18n="noEntries">No entries yet.</div>
+          <div class="empty-state-desc">
+            Add your first expense or fuel entry to see your summary here.
+          </div>
+          <div class="flex gap-2">
+            <a href="add-expense.html" class="btn btn-primary btn-sm">
+              <span data-i18n="addExpense">+ Add Expense</span>
+            </a>
+            <a href="add-fuel.html" class="btn btn-secondary btn-sm">
+              <span data-i18n="addFuel">+ Add Fuel</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dashboardContent -->
+
+  </main><!-- /main -->
+
+
+  <!-- =======================================================================
+       BOTTOM NAVIGATION — Dashboard tab active
+  ======================================================================== -->
+  <nav class="bottom-nav" role="navigation" aria-label="App navigation">
+
+    <a href="index.html" class="bottom-nav-item active" aria-current="page" aria-label="Dashboard">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span data-i18n="dashboard">Dashboard</span>
+    </a>
+
+    <a href="add-expense.html" class="bottom-nav-item" aria-label="Add Expense">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="12" y1="18" x2="12" y2="12"></line>
+        <line x1="9" y1="15" x2="15" y2="15"></line>
+      </svg>
+      <span data-i18n="addExpense">Add Expense</span>
+    </a>
+
+    <a href="add-fuel.html" class="bottom-nav-item" aria-label="Add Fuel">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+        <path d="M3 22h18"></path>
+        <rect x="7" y="14" width="4" height="8"></rect>
+        <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+      </svg>
+      <span data-i18n="addFuel">Add Fuel</span>
+    </a>
+
+    <a href="my-entries.html" class="bottom-nav-item" aria-label="My Entries">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8" y1="6"  x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6"  x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+      </svg>
+      <span data-i18n="myEntries">My Entries</span>
+    </a>
+
+    <a href="export.html" class="bottom-nav-item" aria-label="Export">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span data-i18n="export">Export</span>
+    </a>
+
+  </nav><!-- /bottom-nav -->
+
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+       Load order: translations → lists → utils → validations → app → data access → dashboard
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/expenses.js"></script>
+  <script src="js/fuel.js"></script>
+
+  <!-- Dashboard logic — runs after all globals are available -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    const sectionRequired = document.getElementById('sectionSettingsRequired');
+    const sectionDash     = document.getElementById('dashboardContent');
+
+    /* ---- Guard: settings must be complete ---- */
+    if (!isSettingsComplete()) {
+      sectionRequired.classList.remove('hidden');
+      sectionDash.classList.add('hidden');
+      return;
+    }
+
+    sectionRequired.classList.add('hidden');
+    sectionDash.classList.remove('hidden');
+
+    const settings = getSettings();
+
+    /* ---- Welcome row ---- */
+    const firstName = settings.name.trim().split(/\s+/)[0];
+    document.getElementById('welcomeName').textContent = ' ' + firstName;
+
+    const chip = document.getElementById('trackingChip');
+    chip.textContent = 'T-' + settings.trackingNumber;
+    chip.classList.remove('hidden');
+
+    const monthChip = document.getElementById('monthChip');
+    monthChip.textContent = getCurrentMonth() + ' ' + getCurrentYear();
+
+    const welcomeSub = document.getElementById('welcomeSub');
+    welcomeSub.textContent = settings.defaultProject
+      ? settings.defaultProject + ' — ' + settings.defaultCoordinator
+      : settings.defaultCoordinator || '';
+
+    /* ---- Load data ---- */
+    const expenses = (typeof getExpenses === 'function')
+      ? getExpenses()
+      : loadFromStorage('expenses', []);
+
+    const fuel = (typeof getFuelEntries === 'function')
+      ? getFuelEntries()
+      : loadFromStorage('fuel', []);
+
+    /* ---- Stats ---- */
+    const expenseTotal = expenses.reduce(
+      function (sum, e) { return sum + (parseFloat(e.amount) || 0); }, 0);
+
+    const fuelTotal = fuel.reduce(
+      function (sum, e) {
+        return sum + (parseFloat(e.fuelAmount) || 0) + (parseFloat(e.kartaAmount) || 0);
+      }, 0);
+
+    document.getElementById('statExpenseTotal').textContent = formatCurrency(expenseTotal);
+    document.getElementById('statFuelTotal').textContent    = formatCurrency(fuelTotal);
+    document.getElementById('statExpenseCount').textContent = expenses.length;
+    document.getElementById('statFuelCount').textContent    = fuel.length;
+
+    /* ---- Recent entries ---- */
+    _renderRecentEntries(expenses, fuel);
+  });
+
+
+  /* -----------------------------------------------------------------------
+     _renderRecentEntries(expenses, fuel)
+     Merges, sorts newest-first, slices top 5, renders into #recentList.
+  ----------------------------------------------------------------------- */
+  function _renderRecentEntries(expenses, fuel) {
+    const recentList      = document.getElementById('recentList');
+    const recentContainer = document.getElementById('recentListContainer');
+    const emptyState      = document.getElementById('emptyStateEntries');
+
+    /* Tag each entry with its type */
+    const tagged = [
+      ...expenses.map(function (e) { return Object.assign({ _type: 'expense' }, e); }),
+      ...fuel.map(function (f)     { return Object.assign({ _type: 'fuel' },    f); }),
+    ];
+
+    if (tagged.length === 0) {
+      recentContainer.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      return;
+    }
+
+    recentContainer.classList.remove('hidden');
+    emptyState.classList.add('hidden');
+
+    /* Sort by createdAt descending; fall back to date string comparison */
+    tagged.sort(function (a, b) {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tb - ta;
+    });
+
+    const recent = tagged.slice(0, 5);
+    recentList.innerHTML = '';
+
+    recent.forEach(function (entry) {
+      recentList.appendChild(_buildRecentRow(entry));
+    });
+  }
+
+
+  /* -----------------------------------------------------------------------
+     _buildRecentRow(entry) → HTMLElement
+     Returns a .recent-list-item element for one expense or fuel entry.
+  ----------------------------------------------------------------------- */
+  function _buildRecentRow(entry) {
+    const isExpense = entry._type === 'expense';
+
+    const item = document.createElement('a');
+    item.className = 'recent-list-item';
+    item.href = isExpense
+      ? 'add-expense.html?id=' + (entry.id || '')
+      : 'add-fuel.html?id='    + (entry.id || '');
+    item.setAttribute('role', 'listitem');
+
+    /* Type icon */
+    const iconEl = document.createElement('div');
+    iconEl.className = 'recent-item-icon ' + (isExpense ? 'expense' : 'fuel');
+    iconEl.setAttribute('aria-hidden', 'true');
+    iconEl.innerHTML = isExpense
+      ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>'
+      : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path><path d="M3 22h18"></path><rect x="7" y="14" width="4" height="8"></rect><path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path></svg>';
+
+    /* Body: description + meta */
+    const body = document.createElement('div');
+    body.className = 'recent-item-body';
+
+    const desc = document.createElement('div');
+    desc.className = 'recent-item-desc';
+    desc.textContent = isExpense
+      ? (entry.itemDescription || entry.category || '—')
+      : (entry.area || entry.driver || 'Fuel');
+
+    const meta = document.createElement('div');
+    meta.className = 'recent-item-meta';
+
+    const site = document.createElement('span');
+    site.className = 'recent-item-site ltr-field';
+    site.textContent = entry.siteId || '—';
+
+    const sep = document.createTextNode(' · ');
+
+    const proj = document.createElement('span');
+    proj.textContent = entry.projectName || '—';
+
+    meta.append(site, sep, proj);
+    body.append(desc, meta);
+
+    /* Right: amount + date */
+    const right = document.createElement('div');
+    right.className = 'recent-item-right';
+
+    const amount = document.createElement('div');
+    amount.className = 'recent-item-amount';
+    if (isExpense) {
+      amount.textContent = formatCurrency(entry.amount || 0);
+    } else {
+      const total = (parseFloat(entry.fuelAmount) || 0) + (parseFloat(entry.kartaAmount) || 0);
+      amount.textContent = formatCurrency(total);
+    }
+
+    const date = document.createElement('div');
+    date.className = 'recent-item-date';
+    date.textContent = entry.date || '—';
+
+    right.append(amount, date);
+
+    /* Chevron */
+    const arrow = document.createElement('span');
+    arrow.className = 'recent-item-arrow icon-directional';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+    item.append(iconEl, body, right, arrow);
+    return item;
+  }
+  </script>
+
+</body>
+</html>

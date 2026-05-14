@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Field — Settings" />
+  <title>Settings — ExpenseFuel Field</title>
+
+  <!-- Design system first, then app overrides -->
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Language preference radio — styled as a pill toggle.
+       Scoped here because it is only needed on this page.
+    ----------------------------------------------------------------------- */
+    .lang-pref-toggle {
+      display: inline-flex;
+      align-items: center;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-pill);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .lang-pref-toggle input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .lang-pref-toggle label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 20px;
+      border-radius: var(--radius-pill);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+      line-height: 1;
+    }
+
+    .lang-pref-toggle input[type="radio"]:checked + label {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+
+    .lang-pref-toggle label:hover {
+      color: var(--color-primary);
+    }
+
+    .lang-pref-toggle input[type="radio"]:checked + label:hover {
+      color: var(--color-text-inverse);
+    }
+
+    .lang-pref-toggle input[type="radio"]:focus-visible + label {
+      outline: 3px solid var(--color-primary-light);
+      outline-offset: 1px;
+    }
+
+    /* Clear All — ghost danger variant */
+    .btn-ghost-danger {
+      background: transparent;
+      color: var(--color-danger);
+      border-color: transparent;
+    }
+
+    .btn-ghost-danger:hover {
+      background: var(--color-danger-bg);
+      border-color: var(--color-danger-bg);
+    }
+  </style>
+</head>
+
+<body class="field-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="field-navbar-brand">
+      <!-- Back to dashboard -->
+      <a href="index.html" class="page-back-btn" aria-label="Back to dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+
+      <span class="field-navbar-title" data-i18n="settings">Settings</span>
+
+      <!-- Green/red dot: reflects whether settings are complete -->
+      <span class="settings-complete-indicator"
+            id="settingsIndicator"
+            aria-label="Settings status"></span>
+    </div>
+
+    <div class="navbar-actions">
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content has-form-actions-bar" id="mainContent">
+
+    <!-- =====================================================================
+         AVATAR — shown when settings are already saved (populated by settings.js)
+    ====================================================================== -->
+    <div class="settings-avatar hidden" id="settingsAvatar" aria-live="polite">
+      <div class="settings-avatar-circle" id="avatarInitials" aria-hidden="true">--</div>
+      <div class="settings-avatar-name"   id="avatarName">—</div>
+      <div class="settings-avatar-meta"   id="avatarMobile"></div>
+      <div class="tracking-number-badge"  id="avatarTracking">T-—</div>
+    </div>
+
+
+    <!-- =====================================================================
+         FORM CARD
+    ====================================================================== -->
+    <div class="card">
+
+      <!-- Card header -->
+      <div class="card-header">
+        <h1 class="card-title">
+          <svg class="card-title-icon" width="18" height="18" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span data-i18n="settings">Settings</span>
+        </h1>
+      </div>
+
+      <!-- ------------------------------------------------------------------
+           SECTION 1 — Personal Information
+      ------------------------------------------------------------------- -->
+      <p class="form-section-heading" data-i18n="name"
+         style="margin-top:0">Personal</p>
+
+      <div class="grid-2">
+
+        <!-- Full Name -->
+        <div class="form-group">
+          <label class="form-label" for="fieldName">
+            <span data-i18n="name">Full Name</span>
+            <span class="required" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="text"
+            id="fieldName"
+            class="form-input"
+            data-i18n-placeholder="name"
+            placeholder="Full Name"
+            autocomplete="name"
+            required
+          />
+          <span class="form-error hidden" id="errorName" role="alert">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span data-i18n="missingField">Please fill in all required fields.</span>
+          </span>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group">
+          <label class="form-label" for="fieldMobile">
+            <span data-i18n="mobile">Mobile</span>
+            <span class="required" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="tel"
+            id="fieldMobile"
+            class="form-input ltr-field"
+            placeholder="01xxxxxxxxx"
+            autocomplete="tel"
+            inputmode="numeric"
+            required
+          />
+          <span class="form-error hidden" id="errorMobile" role="alert">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span data-i18n="missingField">Please fill in all required fields.</span>
+          </span>
+        </div>
+
+      </div><!-- /grid-2 personal -->
+
+
+      <div class="divider" data-i18n="settings" style="margin:var(--sp-2) 0 var(--sp-4)"></div>
+
+      <!-- ------------------------------------------------------------------
+           SECTION 2 — Work Defaults
+      ------------------------------------------------------------------- -->
+      <p class="form-section-heading">Work Defaults</p>
+
+      <div class="grid-2">
+
+        <!-- Tracking Number -->
+        <div class="form-group">
+          <label class="form-label" for="fieldTrackingNumber">
+            <span data-i18n="trackingNumber">Tracking Number</span>
+            <span class="required" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="number"
+            id="fieldTrackingNumber"
+            class="form-input ltr-field"
+            placeholder="e.g. 13"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            required
+          />
+          <span class="form-hint" data-i18n="trackingNum">Used in exported filenames</span>
+          <span class="form-error hidden" id="errorTracking" role="alert">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span data-i18n="zeroAmount">Must be greater than zero.</span>
+          </span>
+        </div>
+
+        <!-- Account Type -->
+        <div class="form-group">
+          <label class="form-label" for="fieldAccountType">
+            <span data-i18n="accountType">Account Type</span>
+          </label>
+          <select id="fieldAccountType" class="form-select">
+            <option value="New">New</option>
+            <option value="VF">VF</option>
+          </select>
+        </div>
+
+        <!-- Default Coordinator -->
+        <div class="form-group">
+          <label class="form-label" for="fieldCoordinator">
+            <span data-i18n="defaultCoordinator">Default Coordinator</span>
+          </label>
+          <input
+            type="text"
+            id="fieldCoordinator"
+            class="form-input"
+            placeholder="e.g. eslam mussa"
+            autocomplete="off"
+          />
+          <span class="form-hint">Pre-filled on every new entry</span>
+        </div>
+
+        <!-- Default Project -->
+        <div class="form-group">
+          <label class="form-label" for="fieldProject">
+            <span data-i18n="defaultProject">Default Project</span>
+          </label>
+          <!-- Populated by settings.js via populateSelect() -->
+          <select id="fieldProject" class="form-select"></select>
+        </div>
+
+        <!-- Default Driver -->
+        <div class="form-group">
+          <label class="form-label" for="fieldDriver">
+            <span data-i18n="defaultDriver">Default Driver</span>
+          </label>
+          <input
+            type="text"
+            id="fieldDriver"
+            class="form-input"
+            placeholder="Driver name"
+            autocomplete="off"
+          />
+        </div>
+
+      </div><!-- /grid-2 work defaults -->
+
+
+      <div class="divider" style="margin:var(--sp-2) 0 var(--sp-4)"></div>
+
+      <!-- ------------------------------------------------------------------
+           SECTION 3 — Preferences
+      ------------------------------------------------------------------- -->
+      <p class="form-section-heading" data-i18n="language">Language</p>
+
+      <div class="form-group">
+        <label class="form-label" data-i18n="language">Language</label>
+
+        <div class="lang-pref-toggle" role="group" aria-label="Preferred language">
+          <input type="radio" id="langPrefEn" name="language" value="en" />
+          <label for="langPrefEn">English</label>
+
+          <input type="radio" id="langPrefAr" name="language" value="ar" />
+          <label for="langPrefAr">العربية</label>
+        </div>
+
+        <span class="form-hint">Applies on next page load and to exported files</span>
+      </div>
+
+    </div><!-- /card -->
+
+
+    <!-- =====================================================================
+         FORM ACTION BAR (sticky above bottom-nav on mobile)
+    ====================================================================== -->
+    <div class="form-actions-bar" role="group" aria-label="Form actions">
+      <button
+        type="button"
+        class="btn btn-ghost-danger"
+        id="btnClearAll"
+        onclick="clearAllSettings()"
+        aria-label="Clear all settings"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6l-1 14H6L5 6"></path>
+          <path d="M10 11v6"></path><path d="M14 11v6"></path>
+          <path d="M9 6V4h6v2"></path>
+        </svg>
+        <span data-i18n="clear">Clear All</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        id="btnSave"
+        onclick="saveSettings()"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        <span data-i18n="save">Save</span>
+      </button>
+    </div>
+
+  </main><!-- /main -->
+
+
+  <!-- =======================================================================
+       BOTTOM NAVIGATION — 5 tabs (none active on settings page)
+  ======================================================================== -->
+  <nav class="bottom-nav" role="navigation" aria-label="App navigation">
+
+    <a href="index.html" class="bottom-nav-item" aria-label="Dashboard">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span data-i18n="dashboard">Dashboard</span>
+    </a>
+
+    <a href="add-expense.html" class="bottom-nav-item" aria-label="Add Expense">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="12" y1="18" x2="12" y2="12"></line>
+        <line x1="9" y1="15" x2="15" y2="15"></line>
+      </svg>
+      <span data-i18n="addExpense">Add Expense</span>
+    </a>
+
+    <a href="add-fuel.html" class="bottom-nav-item" aria-label="Add Fuel">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+        <path d="M3 22h18"></path>
+        <rect x="7" y="14" width="4" height="8"></rect>
+        <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+      </svg>
+      <span data-i18n="addFuel">Add Fuel</span>
+    </a>
+
+    <a href="my-entries.html" class="bottom-nav-item" aria-label="My Entries">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8" y1="6" x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+      </svg>
+      <span data-i18n="myEntries">My Entries</span>
+    </a>
+
+    <a href="export.html" class="bottom-nav-item" aria-label="Export">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span data-i18n="export">Export</span>
+    </a>
+
+  </nav><!-- /bottom-nav -->
+
+
+  <!-- Toast container — populated by showToast() in utils.js -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+       Load order: translations → lists → utils → validations → app → page
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/settings.js"></script>
+
+</body>
+</html>
