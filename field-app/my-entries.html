@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Field — My Entries" />
+  <title>My Entries — ExpenseFuel Field</title>
+
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Tabs row
+    ----------------------------------------------------------------------- */
+    .tabs-row {
+      display: flex;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-3);
+    }
+
+    /* -----------------------------------------------------------------------
+       Summary strip — compact data bar below tabs
+    ----------------------------------------------------------------------- */
+    .summary-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--sp-3) var(--sp-5);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--color-primary);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--sp-4);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .summary-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .summary-stat-label {
+      font-size: var(--text-xs);
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-stat-value {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: #fff;
+      direction: ltr;
+    }
+
+    .summary-divider {
+      width: 1px;
+      height: 28px;
+      background: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+
+    /* -----------------------------------------------------------------------
+       Filter card
+    ----------------------------------------------------------------------- */
+    .filter-card {
+      padding: var(--sp-4);
+      margin-bottom: var(--sp-4);
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      align-items: flex-end;
+    }
+
+    .filter-row .form-select,
+    .filter-row .form-input {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .filter-clear-link {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0 var(--sp-2);
+      height: 40px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: color var(--transition);
+    }
+
+    .filter-clear-link:hover { color: var(--color-danger); }
+
+    /* Filter toggle (mobile only) */
+    .filter-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--sp-3);
+      cursor: pointer;
+    }
+
+    .filter-toggle-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .filter-toggle-chevron {
+      color: var(--color-text-muted);
+      transition: transform var(--transition);
+    }
+
+    .filter-toggle-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .filter-body {
+      overflow: hidden;
+      transition: max-height 250ms ease, opacity 250ms ease;
+    }
+
+    .filter-body.collapsed {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @media (min-width: 768px) {
+      .filter-toggle-row { display: none; } /* always visible on desktop */
+      .filter-body.collapsed {
+        max-height: 999px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    /* -----------------------------------------------------------------------
+       Table action buttons
+    ----------------------------------------------------------------------- */
+    .table-actions {
+      display: flex;
+      gap: var(--sp-1);
+      align-items: center;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      cursor: pointer;
+      color: var(--color-text-muted);
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .action-btn:hover { border-color: currentColor; }
+
+    .action-btn-edit:hover {
+      color: var(--color-primary);
+      background: var(--color-primary-light);
+      border-color: var(--color-primary-light);
+    }
+
+    .action-btn-delete:hover {
+      color: var(--color-danger);
+      background: var(--color-danger-bg);
+      border-color: var(--color-danger-bg);
+    }
+
+    /* Description cell — truncate long text */
+    .cell-desc {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Amount cells right-aligned in LTR */
+    .cell-amount {
+      text-align: right;
+      font-weight: 600;
+      color: var(--color-primary);
+      direction: ltr;
+    }
+
+    [dir="rtl"] .cell-amount { text-align: left; }
+
+    /* KM/dist cells */
+    .cell-km {
+      direction: ltr;
+      white-space: nowrap;
+    }
+
+    /* Results count label */
+    .results-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-align: right;
+      margin-bottom: var(--sp-2);
+    }
+
+    [dir="rtl"] .results-label { text-align: left; }
+  </style>
+</head>
+
+<body class="field-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="field-navbar-brand">
+      <span class="field-navbar-title" data-i18n="myEntries">My Entries</span>
+      <span class="settings-complete-indicator"
+            id="settingsIndicator"
+            aria-label="Settings status"></span>
+    </div>
+
+    <div class="navbar-actions">
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+      <a href="settings.html" class="navbar-icon-btn" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </a>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content" id="mainContent">
+
+    <!-- =====================================================================
+         TAB BAR — Expenses | Fuel
+    ====================================================================== -->
+    <div class="tabs-row" role="tablist" aria-label="Entry types">
+
+      <button
+        id="tabExpenses"
+        class="filter-tab active"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panelExpenses"
+        onclick="switchTab('expenses')"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        <span data-i18n="addExpense">Expenses</span>
+        <span class="filter-tab-count" id="countExpenses">0</span>
+      </button>
+
+      <button
+        id="tabFuel"
+        class="filter-tab"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panelFuel"
+        onclick="switchTab('fuel')"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+          <path d="M3 22h18"></path>
+          <rect x="7" y="14" width="4" height="8"></rect>
+          <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+        </svg>
+        <span data-i18n="addFuel">Fuel</span>
+        <span class="filter-tab-count" id="countFuel">0</span>
+      </button>
+
+    </div><!-- /tabs-row -->
+
+
+    <!-- =====================================================================
+         SUMMARY STRIP
+    ====================================================================== -->
+
+    <!-- Expenses summary (shown when Expenses tab is active) -->
+    <div class="summary-strip" id="summaryExpenses" aria-live="polite">
+      <div class="summary-stat">
+        <span class="summary-stat-label" data-i18n="total">Total</span>
+        <span class="summary-stat-value" id="expenseTotal">—</span>
+      </div>
+      <div class="summary-divider" aria-hidden="true"></div>
+      <div class="summary-stat">
+        <span class="summary-stat-label" data-i18n="expenseEntries">Entries</span>
+        <span class="summary-stat-value" id="expenseEntryCount">0</span>
+      </div>
+    </div>
+
+    <!-- Fuel summary (shown when Fuel tab is active) -->
+    <div class="summary-strip hidden" id="summaryFuel" aria-live="polite">
+      <div class="summary-stat">
+        <span class="summary-stat-label" data-i18n="newFuel">New Fuel</span>
+        <span class="summary-stat-value" id="fuelTotalFuel">—</span>
+      </div>
+      <div class="summary-divider" aria-hidden="true"></div>
+      <div class="summary-stat">
+        <span class="summary-stat-label" data-i18n="karta">Karta</span>
+        <span class="summary-stat-value" id="fuelTotalKarta">—</span>
+      </div>
+      <div class="summary-divider" aria-hidden="true"></div>
+      <div class="summary-stat">
+        <span class="summary-stat-label" data-i18n="fuelEntries">Entries</span>
+        <span class="summary-stat-value" id="fuelEntryCount">0</span>
+      </div>
+    </div>
+
+
+    <!-- =====================================================================
+         FILTER CARD
+    ====================================================================== -->
+    <div class="filter-card card">
+
+      <!-- Toggle row — visible on mobile, hidden on desktop -->
+      <div class="filter-toggle-row" id="filterToggleRow" onclick="toggleFilters()">
+        <span class="filter-toggle-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          Filters
+        </span>
+        <svg class="filter-toggle-chevron" id="filterChevron"
+             width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+
+      <div class="filter-body collapsed" id="filterBody">
+        <div class="filter-row">
+
+          <!-- Month filter -->
+          <select
+            id="filterMonth"
+            class="form-select"
+            aria-label="Filter by month"
+            onchange="applyFilters()"
+          ></select>
+
+          <!-- Project filter -->
+          <select
+            id="filterProject"
+            class="form-select"
+            aria-label="Filter by project"
+            onchange="applyFilters()"
+          ></select>
+
+          <!-- Search -->
+          <input
+            type="search"
+            id="filterSearch"
+            class="form-input"
+            placeholder="Search description, site…"
+            data-i18n-placeholder="description"
+            inputmode="search"
+            oninput="applyFilters()"
+            aria-label="Search entries"
+          />
+
+          <!-- Clear -->
+          <button
+            type="button"
+            class="filter-clear-link"
+            id="btnClearFilters"
+            onclick="clearFilters()"
+            aria-label="Clear all filters"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Clear
+          </button>
+
+        </div>
+      </div>
+
+    </div><!-- /filter-card -->
+
+
+    <!-- =====================================================================
+         EXPENSES PANEL
+    ====================================================================== -->
+    <div id="panelExpenses" role="tabpanel" aria-labelledby="tabExpenses">
+
+      <!-- Results count -->
+      <div class="results-label hidden" id="expensesResultsLabel" aria-live="polite"></div>
+
+      <!-- Table -->
+      <div class="table-wrapper" id="expensesTableWrapper">
+        <table aria-label="Expense entries">
+          <thead>
+            <tr>
+              <th data-i18n="date">Date</th>
+              <th data-i18n="project">Project</th>
+              <th data-i18n="siteId">Site ID</th>
+              <th data-i18n="category">Category</th>
+              <th data-i18n="description">Description</th>
+              <th data-i18n="amount" style="text-align:right">Amount</th>
+              <th style="width:72px"></th><!-- Actions — no label -->
+            </tr>
+          </thead>
+          <tbody id="expensesTableBody">
+            <!-- Populated by entries.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div class="card hidden" id="emptyExpenses">
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <div class="empty-state-title" data-i18n="noEntries">No expense entries yet.</div>
+          <div class="empty-state-desc" id="emptyExpensesDesc">
+            Add your first expense to see it here.
+          </div>
+          <a href="add-expense.html" class="btn btn-primary btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span data-i18n="addExpense">Add Expense</span>
+          </a>
+        </div>
+      </div>
+
+    </div><!-- /panelExpenses -->
+
+
+    <!-- =====================================================================
+         FUEL PANEL (hidden by default)
+    ====================================================================== -->
+    <div id="panelFuel" role="tabpanel" aria-labelledby="tabFuel" class="hidden">
+
+      <!-- Results count -->
+      <div class="results-label hidden" id="fuelResultsLabel" aria-live="polite"></div>
+
+      <!-- Table -->
+      <div class="table-wrapper" id="fuelTableWrapper">
+        <table aria-label="Fuel entries">
+          <thead>
+            <tr>
+              <th data-i18n="date">Date</th>
+              <th data-i18n="project">Project</th>
+              <th data-i18n="siteId">Site</th>
+              <th data-i18n="startKm">Start KM</th>
+              <th data-i18n="endKm">End KM</th>
+              <th data-i18n="distance">Dist.</th>
+              <th data-i18n="newFuel">Fuel</th>
+              <th data-i18n="karta">Karta</th>
+              <th style="width:72px"></th><!-- Actions -->
+            </tr>
+          </thead>
+          <tbody id="fuelTableBody">
+            <!-- Populated by entries.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div class="card hidden" id="emptyFuel">
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+              <path d="M3 22h18"></path>
+              <rect x="7" y="14" width="4" height="8"></rect>
+              <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+            </svg>
+          </div>
+          <div class="empty-state-title" data-i18n="noEntries">No fuel entries yet.</div>
+          <div class="empty-state-desc" id="emptyFuelDesc">
+            Add your first fuel entry to see it here.
+          </div>
+          <a href="add-fuel.html" class="btn btn-primary btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span data-i18n="addFuel">Add Fuel</span>
+          </a>
+        </div>
+      </div>
+
+    </div><!-- /panelFuel -->
+
+  </main><!-- /main -->
+
+
+  <!-- =======================================================================
+       BOTTOM NAVIGATION — My Entries tab active
+  ======================================================================== -->
+  <nav class="bottom-nav" role="navigation" aria-label="App navigation">
+
+    <a href="index.html" class="bottom-nav-item" aria-label="Dashboard">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span data-i18n="dashboard">Dashboard</span>
+    </a>
+
+    <a href="add-expense.html" class="bottom-nav-item" aria-label="Add Expense">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="12" y1="18" x2="12" y2="12"></line>
+        <line x1="9" y1="15" x2="15" y2="15"></line>
+      </svg>
+      <span data-i18n="addExpense">Add Expense</span>
+    </a>
+
+    <a href="add-fuel.html" class="bottom-nav-item" aria-label="Add Fuel">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+        <path d="M3 22h18"></path>
+        <rect x="7" y="14" width="4" height="8"></rect>
+        <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+      </svg>
+      <span data-i18n="addFuel">Add Fuel</span>
+    </a>
+
+    <a href="my-entries.html" class="bottom-nav-item active" aria-current="page" aria-label="My Entries">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8" y1="6"  x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6"  x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+      </svg>
+      <span data-i18n="myEntries">My Entries</span>
+    </a>
+
+    <a href="export.html" class="bottom-nav-item" aria-label="Export">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span data-i18n="export">Export</span>
+    </a>
+
+  </nav><!-- /bottom-nav -->
+
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+       Load order: translations → lists → utils → validations → app → expenses → fuel → entries → init
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/expenses.js"></script>
+  <script src="js/fuel.js"></script>
+  <script src="js/entries.js"></script>
+
+  <!-- Page init -->
+  <script>
+  /* ---- Current active tab state (used by applyFilters, switchTab) ---- */
+  let _activeTab = 'expenses';
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    /* Populate filter selects */
+    _populateFilterSelects();
+
+    /* Open filters on desktop by default */
+    if (window.innerWidth >= 768) {
+      document.getElementById('filterBody').classList.remove('collapsed');
+      document.getElementById('filterChevron').classList.add('open');
+    }
+
+    /* Initial render via entries.js */
+    if (typeof initEntries === 'function') {
+      initEntries();
+    }
+
+    /* Re-render when entries are modified by expense/fuel delete modals */
+    window.addEventListener('expensesUpdated', function () {
+      if (typeof renderExpensesTable === 'function') renderExpensesTable();
+    });
+
+    window.addEventListener('fuelUpdated', function () {
+      if (typeof renderFuelTable === 'function') renderFuelTable();
+    });
+  });
+
+
+  /* ---- Tab switching (called by onclick on tab buttons) ---- */
+  function switchTab(tab) {
+    _activeTab = tab;
+    const isExpenses = tab === 'expenses';
+
+    /* Tab buttons */
+    const tabExp  = document.getElementById('tabExpenses');
+    const tabFuel = document.getElementById('tabFuel');
+    if (tabExp)  { tabExp.classList.toggle('active', isExpenses);  tabExp.setAttribute('aria-selected',  isExpenses); }
+    if (tabFuel) { tabFuel.classList.toggle('active', !isExpenses); tabFuel.setAttribute('aria-selected', !isExpenses); }
+
+    /* Panels */
+    _toggleEl('panelExpenses', isExpenses);
+    _toggleEl('panelFuel',    !isExpenses);
+
+    /* Summary strips */
+    _toggleEl('summaryExpenses', isExpenses);
+    _toggleEl('summaryFuel',    !isExpenses);
+
+    /* Re-apply filters for the newly active tab */
+    if (typeof applyFilters === 'function') applyFilters();
+  }
+
+
+  /* ---- Filter bar collapse (mobile) ---- */
+  function toggleFilters() {
+    const body    = document.getElementById('filterBody');
+    const chevron = document.getElementById('filterChevron');
+    if (!body) return;
+    const isCollapsed = body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', !isCollapsed);
+    if (chevron) chevron.classList.toggle('open', !isCollapsed);
+  }
+
+
+  /* ---- Filter selects: All Months + All Projects ---- */
+  function _populateFilterSelects() {
+    const monthEl   = document.getElementById('filterMonth');
+    const projectEl = document.getElementById('filterProject');
+
+    if (monthEl) {
+      monthEl.innerHTML = '';
+      const allOpt = document.createElement('option');
+      allOpt.value = '';
+      allOpt.textContent = 'All Months';
+      monthEl.appendChild(allOpt);
+      LISTS.months.forEach(function (m) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        monthEl.appendChild(opt);
+      });
+    }
+
+    if (projectEl) {
+      projectEl.innerHTML = '';
+      const allOpt = document.createElement('option');
+      allOpt.value = '';
+      allOpt.textContent = 'All Projects';
+      projectEl.appendChild(allOpt);
+      LISTS.projects.forEach(function (p) {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        projectEl.appendChild(opt);
+      });
+    }
+  }
+
+
+  /* ---- Helper ---- */
+  function _toggleEl(id, show) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !show);
+  }
+  </script>
+
+</body>
+</html>
