@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Coordinator — Dashboard" />
+  <title>Dashboard — ExpenseFuel Coordinator</title>
+
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Page-scoped only
+    ----------------------------------------------------------------------- */
+
+    /* Navbar inline nav links */
+    .coord-nav-link {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .coord-nav-link:hover  { color: var(--color-primary); background: var(--color-primary-subtle); }
+    .coord-nav-link.active { color: var(--color-primary); font-weight: 600; }
+
+    /* Welcome row */
+    .welcome-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-5);
+    }
+
+    .welcome-greeting {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1.2;
+    }
+
+    .welcome-greeting-sub {
+      font-size: var(--text-lg);
+      font-weight: 400;
+      color: var(--color-text-secondary);
+    }
+
+    .welcome-sub {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Section heading row */
+    .section-heading {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--sp-3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Settings incomplete full-card prompt */
+    .settings-required-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--sp-4);
+      padding: var(--sp-10) var(--sp-6);
+    }
+
+    .settings-req-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-req-title {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .settings-req-desc {
+      font-size: var(--text-base);
+      color: var(--color-text-secondary);
+      max-width: 320px;
+      line-height: 1.6;
+    }
+
+    /* Import card item — delete button */
+    .btn-icon-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .btn-icon-danger:hover {
+      background: var(--color-danger-bg);
+      border-color: #fecaca;
+      color: var(--color-danger);
+    }
+
+    /* Empty state (no imports) */
+    .no-imports-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--sp-4);
+      padding: var(--sp-10) var(--sp-6);
+    }
+
+    .no-imports-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .no-imports-title {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .no-imports-desc {
+      font-size: var(--text-base);
+      color: var(--color-text-secondary);
+      max-width: 300px;
+      line-height: 1.6;
+    }
+
+    /* Tracking badge on import card */
+    .tracking-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      border-radius: var(--radius-pill);
+      direction: ltr;
+    }
+  </style>
+</head>
+
+<body class="coord-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="coord-navbar-brand">
+      <span class="coord-navbar-title">ExpenseFuel — Coordinator</span>
+      <span class="coord-role-chip">Coordinator</span>
+    </div>
+
+    <div class="navbar-actions">
+      <a href="index.html"    class="coord-nav-link active" aria-current="page" data-i18n="dashboard">Dashboard</a>
+      <a href="import.html"   class="coord-nav-link"        data-i18n="import">Import</a>
+      <a href="settings.html" class="coord-nav-link"        data-i18n="settings">Settings</a>
+
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content" id="mainContent">
+
+
+    <!-- =====================================================================
+         STATE A — Settings incomplete
+    ====================================================================== -->
+    <section id="sectionSettingsRequired" class="hidden" aria-live="polite">
+      <div class="card">
+        <div class="settings-required-card">
+
+          <div class="settings-req-icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+
+          <div class="settings-req-title" data-i18n="settingsRequired">Settings Required</div>
+          <p class="settings-req-desc">
+            Please set your coordinator name and mobile number before reviewing reports.
+          </p>
+          <a href="settings.html" class="btn btn-primary btn-lg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span data-i18n="settings">Go to Settings</span>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================================
+         STATE B — Dashboard (settings complete)
+    ====================================================================== -->
+    <section id="dashboardContent" class="hidden">
+
+      <!-- Welcome row -->
+      <div class="welcome-row">
+        <div>
+          <div class="welcome-greeting">
+            <span class="welcome-greeting-sub" data-i18n="hello">Hello, </span><span id="welcomeName">—</span>
+          </div>
+          <div class="welcome-sub" id="welcomeSub"></div>
+        </div>
+        <div class="dashboard-month-chip" id="monthChip" aria-label="Current month">— —</div>
+      </div>
+
+      <!-- ----------------------------------------------------------------
+           STAT TILES — 3 tiles
+      ----------------------------------------------------------------- -->
+      <div class="dashboard-grid" style="grid-template-columns:repeat(3,1fr)" role="list" aria-label="Summary statistics">
+
+        <!-- Total Reports -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" id="statTotalReports">0</div>
+            <div class="stat-label" data-i18n="totalReports">Total Reports</div>
+          </div>
+        </div>
+
+        <!-- Pending Review -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" style="background:var(--color-warning-bg);color:var(--color-warning)" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" style="color:var(--color-warning)" id="statPending">0</div>
+            <div class="stat-label" data-i18n="pendingReview">Pending Review</div>
+          </div>
+        </div>
+
+        <!-- Fully Approved -->
+        <div class="stat-card" role="listitem">
+          <div class="stat-icon" style="background:var(--color-success-bg);color:var(--color-success)" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value ltr-field" style="color:var(--color-success)" id="statApproved">0</div>
+            <div class="stat-label" data-i18n="fullyApproved">Fully Approved</div>
+          </div>
+        </div>
+
+      </div><!-- /dashboard-grid -->
+
+
+      <!-- ----------------------------------------------------------------
+           IMPORTS LIST
+      ----------------------------------------------------------------- -->
+      <div class="section-heading">
+        <span data-i18n="importedReports">Imported Reports</span>
+        <a href="import.html" class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span data-i18n="import">Import Report</span>
+        </a>
+      </div>
+
+      <!-- Populated by inline script -->
+      <div id="importListContainer" aria-live="polite"></div>
+
+    </section><!-- /dashboardContent -->
+
+  </main><!-- /main -->
+
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/settings.js"></script>
+
+  <script>
+  /* =========================================================================
+     Dashboard logic
+  ========================================================================= */
+  document.addEventListener('DOMContentLoaded', function () {
+
+    var sectionRequired = document.getElementById('sectionSettingsRequired');
+    var sectionDash     = document.getElementById('dashboardContent');
+
+    /* ---- Guard: coord_settings must have name ---- */
+    var cs = getCoordSettings();
+    if (!cs || !cs.name) {
+      sectionRequired.classList.remove('hidden');
+      sectionDash.classList.add('hidden');
+      return;
+    }
+
+    sectionRequired.classList.add('hidden');
+    sectionDash.classList.remove('hidden');
+
+    /* ---- Welcome ---- */
+    var firstName = cs.name.trim().split(/\s+/)[0];
+    document.getElementById('welcomeName').textContent = firstName;
+    document.getElementById('welcomeSub').textContent  = cs.mobile || '';
+    document.getElementById('monthChip').textContent   = getCurrentMonth() + ' ' + getCurrentYear();
+
+    /* ---- Load imports and render ---- */
+    _renderDashboard();
+  });
+
+
+  /* -------------------------------------------------------------------------
+     _renderDashboard()
+     Collects all imports, computes stats per import, updates tiles, renders list.
+  ------------------------------------------------------------------------- */
+  function _renderDashboard() {
+    var imports  = getAllImports();
+    var total    = imports.length;
+    var pending  = 0;
+    var approved = 0;
+
+    /* Tag each import with review stats */
+    var tagged = imports.map(function (imp) {
+      var reviewData   = getReviewData(imp.id);
+      var allEntries   = (imp.expenses || []).concat(imp.fuel || []);
+      var totalCount   = allEntries.length;
+      var reviewedCount = 0;
+      var approvedCount = 0;
+
+      allEntries.forEach(function (entry) {
+        var rd = reviewData[entry.id];
+        if (rd && rd.status && rd.status !== 'pending') reviewedCount++;
+        if (rd && rd.status === 'approved')             approvedCount++;
+      });
+
+      var statusKey;
+      if (totalCount === 0 || reviewedCount === 0) {
+        statusKey = 'pending';
+        pending++;
+      } else if (reviewedCount >= totalCount) {
+        statusKey = 'approved';
+        approved++;
+      } else {
+        statusKey = 'in-review';
+        pending++;
+      }
+
+      return {
+        data:          imp,
+        totalCount:    totalCount,
+        reviewedCount: reviewedCount,
+        approvedCount: approvedCount,
+        statusKey:     statusKey,
+      };
+    });
+
+    /* ---- Update stat tiles ---- */
+    _setText('statTotalReports', String(total));
+    _setText('statPending',      String(pending));
+    _setText('statApproved',     String(approved));
+
+    /* ---- Render import list ---- */
+    var container = document.getElementById('importListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (total === 0) {
+      container.appendChild(_buildEmptyState());
+      return;
+    }
+
+    var list = document.createElement('div');
+    list.className = 'import-list';
+
+    tagged.forEach(function (item) {
+      list.appendChild(_buildImportCard(item));
+    });
+
+    container.appendChild(list);
+  }
+
+
+  /* -------------------------------------------------------------------------
+     _buildImportCard(item) → HTMLElement
+  ------------------------------------------------------------------------- */
+  function _buildImportCard(item) {
+    var imp     = item.data;
+    var id      = imp.id;
+    var member  = imp.teamMember || {};
+    var totals  = imp.totals     || {};
+
+    /* ---- Avatar initials ---- */
+    var name     = member.name || '—';
+    var initials = _buildInitials(name);
+
+    /* ---- Formatted import date ---- */
+    var importDate = imp.importedAt
+      ? _formatImportDate(new Date(imp.importedAt))
+      : '—';
+
+    /* ---- Status badge ---- */
+    var statusHTML = _buildStatusBadge(item.statusKey);
+
+    /* ---- Progress pct ---- */
+    var pct = item.totalCount > 0
+      ? Math.round((item.reviewedCount / item.totalCount) * 100)
+      : 0;
+
+    var progressClass = pct >= 100 ? 'complete' : (pct > 0 ? 'partial' : '');
+
+    /* ---- Card element ---- */
+    var card = document.createElement('div');
+    card.className = 'import-card-item';
+    card.dataset.importId = id;
+
+    card.innerHTML =
+      /* Header */
+      '<div class="import-card-item-header">' +
+        '<div class="import-card-avatar" aria-hidden="true">' + _esc(initials) + '</div>' +
+        '<div class="import-card-info">' +
+          '<div class="import-card-name">' + _esc(name) + '</div>' +
+          '<div class="import-card-meta">' +
+            '<span class="tracking-badge">T-' + _esc(String(member.trackingNumber || imp.trackingNumber || '—')) + '</span>' +
+            '<span class="import-card-date">' + _esc(importDate) + '</span>' +
+          '</div>' +
+        '</div>' +
+        statusHTML +
+      '</div>' +
+
+      /* Counts */
+      '<div class="import-card-counts">' +
+        '<span class="import-count-chip">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+          _esc(String((imp.expenses || []).length)) + ' expenses' +
+          ' &nbsp;·&nbsp; EGP ' + _esc(String(totals.expenseTotal || 0)) +
+        '</span>' +
+        '<span class="import-count-chip">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"/><path d="M3 22h18"/><rect x="7" y="14" width="4" height="8"/></svg>' +
+          _esc(String((imp.fuel || []).length)) + ' fuel' +
+          ' &nbsp;·&nbsp; EGP ' + _esc(String(totals.fuelTotal || 0)) +
+        '</span>' +
+      '</div>' +
+
+      /* Progress bar */
+      '<div class="progress-bar-wrap">' +
+        '<div class="progress-bar" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100">' +
+          '<div class="progress-bar-fill ' + progressClass + '" style="width:' + pct + '%"></div>' +
+        '</div>' +
+        '<span class="progress-label">' +
+          _esc(String(item.reviewedCount)) + ' / ' + _esc(String(item.totalCount)) + ' reviewed' +
+        '</span>' +
+      '</div>' +
+
+      /* Action buttons */
+      '<div class="import-card-actions">' +
+        '<a href="review-expenses.html?importId=' + _esc(id) + '" class="btn btn-secondary btn-sm">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
+          '<span data-i18n="reviewExpenses">Review Expenses</span>' +
+        '</a>' +
+        '<a href="review-fuel.html?importId=' + _esc(id) + '" class="btn btn-secondary btn-sm">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"/><path d="M3 22h18"/><rect x="7" y="14" width="4" height="8"/></svg>' +
+          '<span data-i18n="reviewFuel">Review Fuel</span>' +
+        '</a>' +
+        '<a href="export.html?importId=' + _esc(id) + '" class="btn btn-primary btn-sm">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+          '<span data-i18n="exportFinal">Export Final</span>' +
+        '</a>' +
+        '<button type="button" class="btn-icon-danger" data-delete-id="' + _esc(id) + '" aria-label="Delete report">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
+        '</button>' +
+      '</div>';
+
+    /* ---- Wire delete button ---- */
+    var deleteBtn = card.querySelector('[data-delete-id]');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function () {
+        _confirmDelete(id, name);
+      });
+    }
+
+    return card;
+  }
+
+
+  /* -------------------------------------------------------------------------
+     _buildEmptyState() → HTMLElement
+  ------------------------------------------------------------------------- */
+  function _buildEmptyState() {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="no-imports-card">' +
+        '<div class="no-imports-icon" aria-hidden="true">' +
+          '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="16 16 12 12 8 16"/>' +
+            '<line x1="12" y1="12" x2="12" y2="21"/>' +
+            '<path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>' +
+          '</svg>' +
+        '</div>' +
+        '<div class="no-imports-title" data-i18n="noReports">No Reports Yet</div>' +
+        '<p class="no-imports-desc">Import a field team report to start reviewing expenses and fuel entries.</p>' +
+        '<a href="import.html" class="btn btn-primary btn-lg">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+            '<polyline points="17 8 12 3 7 8"/>' +
+            '<line x1="12" y1="3" x2="12" y2="15"/>' +
+          '</svg>' +
+          '<span data-i18n="import">Import a Report</span>' +
+        '</a>' +
+      '</div>';
+    return card;
+  }
+
+
+  /* -------------------------------------------------------------------------
+     _buildStatusBadge(statusKey) → HTML string
+  ------------------------------------------------------------------------- */
+  function _buildStatusBadge(statusKey) {
+    if (statusKey === 'approved') {
+      return '<span class="badge badge-approved" data-i18n="fullyApproved">Fully Approved</span>';
+    }
+    if (statusKey === 'in-review') {
+      return '<span class="badge badge-primary">In Review</span>';
+    }
+    return '<span class="badge badge-pending" data-i18n="pending">Pending</span>';
+  }
+
+
+  /* -------------------------------------------------------------------------
+     _confirmDelete(importId, memberName)
+  ------------------------------------------------------------------------- */
+  function _confirmDelete(importId, memberName) {
+    var lang  = localStorage.getItem('lang') || DEFAULT_LANG;
+    var isRtl = lang === 'ar';
+
+    /* Remove any stale modal */
+    var stale = document.getElementById('_deleteModal');
+    if (stale) stale.remove();
+
+    /* Inject keyframe once */
+    if (!document.getElementById('_modalKeyframe')) {
+      var kf = document.createElement('style');
+      kf.id = '_modalKeyframe';
+      kf.textContent = '@keyframes _modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}';
+      document.head.appendChild(kf);
+    }
+
+    var overlay = document.createElement('div');
+    overlay.id = '_deleteModal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', '_deleteModalTitle');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(15,23,42,0.55);display:flex;align-items:center;justify-content:center;padding:16px;animation:_modalIn 150ms ease';
+
+    var card = document.createElement('div');
+    card.style.cssText = [
+      'background:#fff',
+      'border-radius:14px',
+      'box-shadow:0 10px 30px rgba(0,0,0,0.15),0 4px 8px rgba(0,0,0,0.06)',
+      'padding:24px',
+      'max-width:380px',
+      'width:100%',
+      'display:flex',
+      'flex-direction:column',
+      'gap:16px',
+      isRtl ? 'direction:rtl;text-align:right' : 'direction:ltr',
+    ].join(';');
+
+    var iconWrap = document.createElement('div');
+    iconWrap.style.cssText = 'width:44px;height:44px;border-radius:50%;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+    iconWrap.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+
+    var h = document.createElement('h3');
+    h.id = '_deleteModalTitle';
+    h.style.cssText = 'font-size:17px;font-weight:700;color:#0f172a;margin:0;line-height:1.3';
+    h.textContent = 'Delete Report?';
+
+    var p = document.createElement('p');
+    p.style.cssText = 'font-size:14px;color:#64748b;margin:0;line-height:1.6';
+    p.textContent = 'Remove the report from ' + memberName + '? All review data for this import will also be deleted. This cannot be undone.';
+
+    var actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;margin-top:4px';
+
+    var btnCancel = document.createElement('button');
+    btnCancel.className = 'btn btn-secondary';
+    btnCancel.textContent = 'Cancel';
+    btnCancel.onclick = function () { overlay.remove(); };
+
+    var btnConfirm = document.createElement('button');
+    btnConfirm.className = 'btn btn-danger';
+    btnConfirm.textContent = 'Delete';
+    btnConfirm.onclick = function () {
+      overlay.remove();
+      /* Remove import + review data */
+      localStorage.removeItem('imported_' + importId);
+      localStorage.removeItem('review_'   + importId);
+      showToast('Report deleted', 'success');
+      _renderDashboard();
+    };
+
+    actions.append(btnCancel, btnConfirm);
+    card.append(iconWrap, h, p, actions);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKeydown); }
+    }
+    document.addEventListener('keydown', onKeydown);
+
+    setTimeout(function () { btnCancel.focus(); }, 50);
+  }
+
+
+  /* -------------------------------------------------------------------------
+     Helpers
+  ------------------------------------------------------------------------- */
+
+  function _setText(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function _esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function _buildInitials(name) {
+    if (!name) return '--';
+    var words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0].charAt(0).toUpperCase();
+    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+  }
+
+  function _formatImportDate(date) {
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+  }
+
+  </script>
+
+</body>
+</html>

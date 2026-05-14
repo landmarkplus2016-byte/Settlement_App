@@ -1,0 +1,895 @@
+/* ==========================================================================
+   ExpenseFuel — Coordinator App Styles
+   Extends shared/css/common.css — load common.css FIRST in HTML:
+     <link rel="stylesheet" href="../shared/css/common.css" />
+     <link rel="stylesheet" href="css/app.css" />
+   ========================================================================== */
+
+/* ==========================================================================
+   0. COORDINATOR THEME — Deep Green overrides
+   ========================================================================== */
+
+:root {
+  --color-primary:        #065f46;
+  --color-primary-hover:  #054a3a;
+  --color-primary-light:  #d1fae5;
+  --color-primary-subtle: #ecfdf5;
+}
+
+/* ==========================================================================
+   1. PAGE SHELL — accounts for fixed navbar only (no bottom nav)
+   ========================================================================== */
+
+/* Desktop-first: sticky navbar 60px, no bottom nav.
+   Every page in the coordinator app uses .coord-page on <body>. */
+.coord-page {
+  padding-top: 70px;    /* 60px navbar + 10px breathing room */
+  padding-bottom: var(--sp-10);
+  min-height: 100vh;
+}
+
+/* ==========================================================================
+   2. NAVBAR — Coordinator App
+   ========================================================================== */
+
+.coord-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.coord-navbar-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Role chip beside the title */
+.coord-role-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   3. TOP NAV TABS — replaces bottom nav for desktop-first layout
+   ========================================================================== */
+
+.coord-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--sp-6);
+  position: sticky;
+  top: 60px; /* sits directly below navbar */
+  z-index: 80;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.coord-nav-tabs::-webkit-scrollbar { display: none; }
+
+.coord-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: var(--transition);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  margin-bottom: -1px; /* overlap the border-bottom of parent */
+}
+
+.coord-nav-tab:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.coord-nav-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Tab badge (pending count) */
+.coord-tab-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.coord-tab-badge:empty,
+.coord-tab-badge[data-count="0"] { display: none; }
+
+/* Pages that have the sticky tab bar need extra top padding */
+.has-nav-tabs {
+  padding-top: calc(70px + 49px); /* navbar + tab bar */
+}
+
+/* ==========================================================================
+   4. DASHBOARD GRID
+   ========================================================================== */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+  }
+}
+
+.dashboard-grid .stat-card {
+  cursor: default;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.dashboard-grid .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 767px) {
+  .dashboard-grid .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    padding: var(--sp-4);
+  }
+
+  .dashboard-grid .stat-icon {
+    width: 36px;
+    height: 36px;
+    margin: 0;
+  }
+
+  .dashboard-grid .stat-value {
+    font-size: var(--text-xl);
+  }
+}
+
+/* ==========================================================================
+   5. IMPORT CARD — drag-and-drop upload zone
+   ========================================================================== */
+
+.import-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-10) var(--sp-8);
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--transition), border-color var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.import-card:hover,
+.import-card:focus-within {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary-light);
+  outline: none;
+}
+
+/* Active / file dragged over */
+.import-card.dragging {
+  background: var(--color-primary-subtle);
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
+}
+
+.import-card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.import-card:hover .import-card-icon,
+.import-card.dragging .import-card-icon {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  transform: scale(1.08);
+}
+
+.import-card-label {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.import-card-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.import-card-formats {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.import-format-chip {
+  padding: 3px 10px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Hidden file input wired to .import-card click */
+.import-file-input {
+  display: none;
+}
+
+/* ==========================================================================
+   6. IMPORT LIST — imported report cards on dashboard
+   ========================================================================== */
+
+.import-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.import-card-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-4) var(--sp-5);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.import-card-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Top row: avatar + name/meta + status pill */
+.import-card-item-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.import-card-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-base);
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+.import-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.import-card-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.import-card-date {
+  direction: ltr;
+}
+
+/* Counts row: expense count + fuel count */
+.import-card-counts {
+  display: flex;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+
+.import-count-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.import-count-chip svg {
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   7. PROGRESS BAR — reviewed/total ratio
+   ========================================================================== */
+
+.progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-pill);
+  transition: width 400ms ease;
+}
+
+.progress-bar-fill.complete {
+  background: var(--color-success);
+}
+
+.progress-bar-fill.partial {
+  background: var(--color-warning);
+}
+
+.progress-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  direction: ltr;
+}
+
+/* Inline variant used inside tables */
+.progress-bar.progress-bar--inline {
+  width: 80px;
+  flex: none;
+}
+
+/* Import card action buttons row */
+.import-card-actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   8. REVIEW TOOLBAR — sticky bar above review table
+   ========================================================================== */
+
+.review-toolbar {
+  position: sticky;
+  top: 109px; /* navbar 60px + tab bar 49px */
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.review-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.review-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+/* Compact progress display inside toolbar */
+.toolbar-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.toolbar-progress-text {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.toolbar-progress-bar {
+  width: 120px;
+  height: 5px;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.toolbar-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-pill);
+  transition: width 400ms ease;
+}
+
+/* Selection count chip */
+.selection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 3px 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+}
+
+.selection-chip:empty { display: none; }
+
+/* Bulk action buttons in toolbar (compact) */
+.toolbar-bulk-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 6px 12px;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.toolbar-bulk-approve:hover {
+  background: var(--color-success);
+  color: #fff;
+  border-color: var(--color-success);
+}
+
+.toolbar-bulk-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 6px 12px;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.toolbar-bulk-flag:hover {
+  background: var(--color-danger);
+  color: #fff;
+  border-color: var(--color-danger);
+}
+
+/* Filter pill group inside toolbar */
+.toolbar-filter-group {
+  display: flex;
+  gap: var(--sp-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.toolbar-filter-group::-webkit-scrollbar { display: none; }
+
+.toolbar-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.toolbar-filter-pill.active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+
+.toolbar-filter-pill:hover:not(.active) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   9. REVIEW TABLE
+   ========================================================================== */
+
+/* Checkbox column */
+.review-table thead th:first-child,
+.review-table tbody td:first-child {
+  width: 40px;
+  padding-left: var(--sp-3);
+  padding-right: 0;
+}
+
+/* Row states */
+.review-table tbody tr.row-selected {
+  background: var(--color-primary-subtle);
+}
+
+.review-table tbody tr.row-approved {
+  background: var(--color-success-bg);
+}
+
+.review-table tbody tr.row-flagged {
+  background: var(--color-danger-bg);
+  border-left: 3px solid var(--color-danger);
+}
+
+[dir="rtl"] .review-table tbody tr.row-flagged {
+  border-left: none;
+  border-right: 3px solid var(--color-danger);
+}
+
+/* Note field in review table */
+.review-note-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  transition: border-color var(--transition);
+}
+
+.review-note-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* Per-row quick action buttons */
+.row-action-approve {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.row-action-approve:hover {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.row-action-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.row-action-flag:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+/* ==========================================================================
+   10. CHECKLIST ITEM — validation checks before export
+   ========================================================================== */
+
+.export-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  transition: background var(--transition);
+}
+
+.checklist-item.pass {
+  background: var(--color-success-bg);
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.checklist-item.fail {
+  background: var(--color-danger-bg);
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.checklist-item.warn {
+  background: var(--color-warning-bg);
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.checklist-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.checklist-item.pass .checklist-icon  { background: #a7f3d0; color: #065f46; }
+.checklist-item.fail .checklist-icon  { background: #fecaca; color: var(--color-danger); }
+.checklist-item.warn .checklist-icon  { background: #fde68a; color: var(--color-warning); }
+
+.checklist-label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.checklist-status {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   11. EXPORT SUMMARY CARD — coordinator version (deep green)
+   ========================================================================== */
+
+.export-summary-card {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-5);
+  box-shadow: var(--shadow-md);
+}
+
+.export-summary-card .stat-value  { color: var(--color-text-inverse); }
+.export-summary-card .stat-label  { color: rgba(255,255,255,0.75); }
+.export-summary-card .stat-icon   { background: rgba(255,255,255,0.15); color: var(--color-text-inverse); }
+
+.export-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.export-row:last-child   { border-bottom: none; }
+.export-row-label        { color: var(--color-text-secondary); }
+.export-row-value        { font-weight: 600; color: var(--color-text-primary); direction: ltr; }
+
+/* ==========================================================================
+   12. FORM / PAGE HEADER
+   ========================================================================== */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.page-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.page-back-btn:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+}
+
+[dir="rtl"] .page-back-btn svg { transform: scaleX(-1); }
+
+.page-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+/* ==========================================================================
+   13. SETTINGS PAGE — coordinator
+   ========================================================================== */
+
+.settings-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+  background: var(--color-primary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--sp-5);
+  color: var(--color-text-inverse);
+}
+
+.settings-avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -1px;
+}
+
+.settings-avatar-name {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  text-align: center;
+}
+
+.settings-avatar-meta {
+  font-size: var(--text-sm);
+  color: rgba(255,255,255,0.75);
+  text-align: center;
+}
+
+/* ==========================================================================
+   14. RESPONSIVE OVERRIDES
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  .coord-nav-tabs {
+    padding: 0 var(--sp-3);
+  }
+
+  .review-toolbar {
+    top: 109px;
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-2);
+  }
+
+  .toolbar-progress-bar {
+    width: 80px;
+  }
+
+  .import-card {
+    padding: var(--sp-8) var(--sp-5);
+  }
+
+  .import-card-actions {
+    gap: var(--sp-2);
+  }
+
+  .import-card-actions .btn {
+    flex: 1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .import-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-4);
+  }
+}

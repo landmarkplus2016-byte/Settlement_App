@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpenseFuel Coordinator — Import Field Report" />
+  <title>Import — ExpenseFuel Coordinator</title>
+
+  <link rel="stylesheet" href="../shared/css/common.css" />
+  <link rel="stylesheet" href="css/app.css" />
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Import page — scoped styles
+    ----------------------------------------------------------------------- */
+
+    /* Preview section table scrolls on narrow screens */
+    .preview-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+    }
+
+    /* File info row */
+    .file-info-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-primary-light);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-4);
+    }
+
+    .file-info-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-info-body { flex: 1; min-width: 0; }
+
+    .file-info-name {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-info-meta {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      direction: ltr;
+      text-align: left;
+    }
+
+    [dir="rtl"] .file-info-meta { text-align: right; }
+
+    /* Member info strip */
+    .member-info-strip {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      flex-wrap: wrap;
+      padding: var(--sp-4);
+      background: var(--color-surface-2);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-5);
+    }
+
+    .member-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 120px;
+    }
+
+    .member-info-label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .member-info-value {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .member-info-value.ltr { direction: ltr; }
+
+    /* Entry count pills */
+    .count-pills {
+      display: flex;
+      gap: var(--sp-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--sp-5);
+    }
+
+    .count-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-4);
+      border-radius: var(--radius-pill);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .count-pill-expenses {
+      background: var(--color-primary-subtle);
+      border-color: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+
+    .count-pill-fuel {
+      background: var(--color-success-bg);
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+
+    .count-pill-number {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      direction: ltr;
+    }
+
+    /* Section subheading inside preview */
+    .preview-section-title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--sp-2);
+      margin-top: var(--sp-5);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .preview-section-title:first-of-type { margin-top: 0; }
+
+    /* Error card */
+    .error-card {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-4);
+      padding: var(--sp-4) var(--sp-5);
+      background: var(--color-danger-bg);
+      border: 1px solid #fecaca;
+      border-left: 4px solid var(--color-danger);
+      border-radius: var(--radius-lg);
+    }
+
+    [dir="rtl"] .error-card {
+      border-left: 1px solid #fecaca;
+      border-right: 4px solid var(--color-danger);
+    }
+
+    .error-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fecaca;
+      color: var(--color-danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .error-card-body { flex: 1; min-width: 0; }
+
+    .error-card-title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: #991b1b;
+      margin-bottom: 4px;
+    }
+
+    .error-card-message {
+      font-size: var(--text-sm);
+      color: #b91c1c;
+      line-height: 1.5;
+    }
+
+    /* Confirm/Cancel action row */
+    .import-actions {
+      display: flex;
+      gap: var(--sp-3);
+      justify-content: flex-end;
+      padding-top: var(--sp-5);
+      border-top: 1px solid var(--color-border);
+      margin-top: var(--sp-5);
+    }
+
+    /* coord-nav-link active style (in navbar) */
+    .coord-nav-link {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .coord-nav-link:hover  { color: var(--color-primary); background: var(--color-primary-subtle); }
+    .coord-nav-link.active { color: var(--color-primary); font-weight: 600; }
+  </style>
+</head>
+
+<body class="coord-page">
+
+  <!-- =======================================================================
+       NAVBAR
+  ======================================================================== -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <div class="coord-navbar-brand">
+      <a href="index.html" class="page-back-btn" aria-label="Back to dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+      <span class="coord-navbar-title">ExpenseFuel — Coordinator</span>
+      <span class="coord-role-chip">Coordinator</span>
+    </div>
+
+    <div class="navbar-actions">
+      <a href="index.html"  class="coord-nav-link" data-i18n="dashboard">Dashboard</a>
+      <a href="import.html" class="coord-nav-link active" data-i18n="import">Import</a>
+      <a href="settings.html" class="coord-nav-link" data-i18n="settings">Settings</a>
+
+      <div class="lang-toggle" role="group" aria-label="Language toggle">
+        <button id="btnEn" aria-pressed="true">EN</button>
+        <button id="btnAr" aria-pressed="false">AR</button>
+      </div>
+    </div>
+
+  </nav><!-- /navbar -->
+
+
+  <!-- =======================================================================
+       PAGE CONTENT
+  ======================================================================== -->
+  <main class="container page-content" id="mainContent">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <h1 class="page-title" data-i18n="importReport">Import Field Report</h1>
+    </div>
+
+
+    <!-- =====================================================================
+         DROP ZONE
+    ====================================================================== -->
+    <div id="dropZoneSection">
+
+      <div
+        class="import-card"
+        id="dropZone"
+        role="button"
+        tabindex="0"
+        aria-label="Drop Excel or JSON file here, or press Enter to browse"
+      >
+        <!-- Cloud upload icon -->
+        <div class="import-card-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 16 12 12 8 16"></polyline>
+            <line x1="12" y1="12" x2="12" y2="21"></line>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+          </svg>
+        </div>
+
+        <div>
+          <p class="import-card-label" data-i18n="dropZoneLabel">
+            Drag &amp; drop Excel or JSON file here
+          </p>
+          <p class="import-card-hint" style="margin:4px 0 0" data-i18n="or">or</p>
+        </div>
+
+        <!-- Browse button -->
+        <button
+          type="button"
+          class="btn btn-secondary"
+          id="btnBrowse"
+          aria-label="Browse for file"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span data-i18n="browseFile">Browse File</span>
+        </button>
+
+        <!-- Hidden file input -->
+        <input
+          type="file"
+          id="fileInput"
+          class="import-file-input"
+          accept=".xlsx,.json"
+          aria-hidden="true"
+          tabindex="-1"
+        />
+
+        <!-- Supported formats note -->
+        <div class="import-card-formats" aria-label="Supported formats">
+          <span class="import-format-chip">xlsx</span>
+          <span class="import-format-chip">json</span>
+        </div>
+        <p class="import-card-hint" style="margin-top:0">
+          <span data-i18n="formatsSupported">.xlsx (Excel) and .json files supported</span>
+        </p>
+
+      </div><!-- /import-card -->
+
+    </div><!-- /dropZoneSection -->
+
+
+    <!-- =====================================================================
+         ERROR CARD — shown if file parse fails
+    ====================================================================== -->
+    <div id="errorSection" class="hidden" aria-live="assertive">
+
+      <div class="error-card" role="alert">
+        <div class="error-card-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="error-card-body">
+          <p class="error-card-title" data-i18n="importFailed">Import Failed</p>
+          <p class="error-card-message" id="errorMessage">Could not read the file.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--sp-4);display:flex;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" id="btnRetry">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 .49-3.93"></path>
+          </svg>
+          <span data-i18n="tryAgain">Try Again</span>
+        </button>
+      </div>
+
+    </div><!-- /errorSection -->
+
+
+    <!-- =====================================================================
+         PREVIEW SECTION — hidden until a file is successfully parsed
+    ====================================================================== -->
+    <div id="previewSection" class="hidden" aria-live="polite">
+
+      <div class="card">
+
+        <!-- Card header -->
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg class="card-title-icon" width="18" height="18" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span data-i18n="filePreview">File Preview</span>
+          </h2>
+        </div>
+
+        <!-- File info row -->
+        <div class="file-info-row" id="fileInfoRow">
+          <div class="file-info-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+          </div>
+          <div class="file-info-body">
+            <div class="file-info-name" id="fileInfoName">—</div>
+            <div class="file-info-meta" id="fileInfoMeta">—</div>
+          </div>
+          <!-- Format chip -->
+          <span class="import-format-chip" id="fileFormatChip">—</span>
+        </div>
+
+        <!-- Team member info -->
+        <div class="member-info-strip" id="memberInfoStrip">
+          <div class="member-info-item">
+            <span class="member-info-label" data-i18n="name">Name</span>
+            <span class="member-info-value" id="memberName">—</span>
+          </div>
+          <div class="member-info-item">
+            <span class="member-info-label" data-i18n="mobile">Mobile</span>
+            <span class="member-info-value ltr" id="memberMobile">—</span>
+          </div>
+          <div class="member-info-item">
+            <span class="member-info-label" data-i18n="trackingNumber">Tracking #</span>
+            <span class="member-info-value ltr" id="memberTracking">—</span>
+          </div>
+          <div class="member-info-item">
+            <span class="member-info-label" data-i18n="month">Month</span>
+            <span class="member-info-value ltr" id="memberMonth">—</span>
+          </div>
+        </div>
+
+        <!-- Entry counts -->
+        <div class="count-pills">
+
+          <div class="count-pill count-pill-expenses">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <span class="count-pill-number" id="expenseCount">0</span>
+            <span data-i18n="expenseEntries">expense entries</span>
+          </div>
+
+          <div class="count-pill count-pill-fuel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+              <path d="M3 22h18"></path>
+              <rect x="7" y="14" width="4" height="8"></rect>
+              <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+            </svg>
+            <span class="count-pill-number" id="fuelCount">0</span>
+            <span data-i18n="fuelEntries">fuel entries</span>
+          </div>
+
+        </div><!-- /count-pills -->
+
+        <!-- -----------------------------------------------------------------
+             EXPENSE ENTRIES PREVIEW — first 3 rows
+        ------------------------------------------------------------------ -->
+        <p class="preview-section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <span data-i18n="expenses">Expenses</span>
+          <span class="badge badge-primary" id="expensePreviewBadge" style="margin-left:var(--sp-2)">preview</span>
+        </p>
+
+        <div id="expensePreviewWrap">
+          <div class="preview-table-wrap">
+            <table class="table" id="expensePreviewTable" aria-label="Expense entries preview">
+              <thead>
+                <tr>
+                  <th data-i18n="date">Date</th>
+                  <th data-i18n="siteId">Site ID</th>
+                  <th data-i18n="category">Category</th>
+                  <th data-i18n="description">Description</th>
+                  <th data-i18n="amount">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="expensePreviewBody">
+                <!-- Populated by import.js -->
+              </tbody>
+            </table>
+          </div>
+          <p class="form-hint" id="expenseMoreHint" style="margin-top:var(--sp-2)"></p>
+        </div>
+
+        <!-- Empty state for expenses -->
+        <div id="expenseEmptyState" class="hidden"
+             style="padding:var(--sp-4);text-align:center;color:var(--color-text-muted);font-size:var(--text-sm)">
+          <span data-i18n="noExpenses">No expense entries in this file.</span>
+        </div>
+
+
+        <!-- -----------------------------------------------------------------
+             FUEL ENTRIES PREVIEW — first 3 rows
+        ------------------------------------------------------------------ -->
+        <p class="preview-section-title" style="margin-top:var(--sp-6)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+            <path d="M3 22h18"></path>
+            <rect x="7" y="14" width="4" height="8"></rect>
+          </svg>
+          <span data-i18n="fuel">Fuel</span>
+          <span class="badge badge-primary" id="fuelPreviewBadge" style="margin-left:var(--sp-2)">preview</span>
+        </p>
+
+        <div id="fuelPreviewWrap">
+          <div class="preview-table-wrap">
+            <table class="table" id="fuelPreviewTable" aria-label="Fuel entries preview">
+              <thead>
+                <tr>
+                  <th data-i18n="date">Date</th>
+                  <th data-i18n="siteId">Site ID</th>
+                  <th data-i18n="startKm">Start KM</th>
+                  <th data-i18n="endKm">End KM</th>
+                  <th data-i18n="fuelAmount">Fuel (EGP)</th>
+                  <th data-i18n="driver">Driver</th>
+                </tr>
+              </thead>
+              <tbody id="fuelPreviewBody">
+                <!-- Populated by import.js -->
+              </tbody>
+            </table>
+          </div>
+          <p class="form-hint" id="fuelMoreHint" style="margin-top:var(--sp-2)"></p>
+        </div>
+
+        <!-- Empty state for fuel -->
+        <div id="fuelEmptyState" class="hidden"
+             style="padding:var(--sp-4);text-align:center;color:var(--color-text-muted);font-size:var(--text-sm)">
+          <span data-i18n="noFuel">No fuel entries in this file.</span>
+        </div>
+
+
+        <!-- -----------------------------------------------------------------
+             CONFIRM / CANCEL
+        ------------------------------------------------------------------ -->
+        <div class="import-actions">
+          <button type="button" class="btn btn-secondary" id="btnCancelImport">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            <span data-i18n="cancel">Cancel</span>
+          </button>
+
+          <button type="button" class="btn btn-primary" id="btnConfirmImport">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span data-i18n="confirmImport">Confirm Import</span>
+          </button>
+        </div>
+
+      </div><!-- /card -->
+
+    </div><!-- /previewSection -->
+
+  </main><!-- /main -->
+
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+
+  <!-- =======================================================================
+       SCRIPTS
+       Load order: SheetJS → translations → lists → utils → validations → app → page
+  ======================================================================== -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/js/translations.js"></script>
+  <script src="../shared/js/lists.js"></script>
+  <script src="../shared/js/utils.js"></script>
+  <script src="../shared/js/validations.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/import.js"></script>
+
+</body>
+</html>
