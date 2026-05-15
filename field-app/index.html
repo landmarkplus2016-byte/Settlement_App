@@ -173,82 +173,107 @@
       </div>
 
       <!-- ------------------------------------------------------------------
-           STAT TILES — 4 cards
+           SUMMARY CARD — navy, mirrors the export summary view
       ------------------------------------------------------------------- -->
-      <div class="dashboard-grid" role="list" aria-label="Summary statistics">
+      <div class="export-summary-card" style="margin-bottom:var(--sp-5)">
 
-        <!-- Total Expenses -->
-        <div class="stat-card" role="listitem">
-          <div class="stat-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
+        <div class="stat-grid">
+
+          <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+            <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value ltr-field" id="statExpenseCount"
+                   style="color:#fff;font-size:var(--text-2xl)">0</div>
+              <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                   data-i18n="expenseEntries">Expense Entries</div>
+            </div>
           </div>
-          <div class="stat-content">
-            <div class="stat-value ltr-field" id="statExpenseTotal">—</div>
-            <div class="stat-label" data-i18n="totalExpenses">Total Expenses</div>
+
+          <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+            <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value ltr-field" id="statExpenseTotal"
+                   style="color:#fff;font-size:var(--text-xl)">—</div>
+              <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                   data-i18n="totalExpenses">Total Expenses</div>
+            </div>
           </div>
+
+          <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+            <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
+                <path d="M3 22h18"></path>
+                <rect x="7" y="14" width="4" height="8"></rect>
+                <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value ltr-field" id="statFuelCount"
+                   style="color:#fff;font-size:var(--text-2xl)">0</div>
+              <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                   data-i18n="fuelEntries">Fuel Entries</div>
+            </div>
+          </div>
+
+          <div class="stat-card" style="background:rgba(255,255,255,0.12);border:none;box-shadow:none">
+            <div class="stat-icon" style="background:rgba(255,255,255,0.2);color:#fff">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value ltr-field" id="statFuelTotal"
+                   style="color:#fff;font-size:var(--text-xl)">—</div>
+              <div class="stat-label" style="color:rgba(255,255,255,0.75)"
+                   data-i18n="totalFuel">Total Fuel</div>
+            </div>
+          </div>
+
+        </div><!-- /stat-grid -->
+
+        <div style="margin-top:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2)">
+
+          <div class="export-row" style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:var(--sp-2)">
+            <span class="export-row-label" style="color:rgba(255,255,255,0.7)" data-i18n="kartaTotal">Karta Total</span>
+            <span class="export-row-value ltr-field" id="statKartaTotal" style="color:#fff">—</span>
+          </div>
+
+          <div class="export-row" style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:var(--sp-2)">
+            <span class="export-row-label" style="color:rgba(255,255,255,0.7)" data-i18n="dateRange">Date Range</span>
+            <span class="export-row-value ltr-field" id="statDateRange" style="color:#fff;font-size:var(--text-sm)">—</span>
+          </div>
+
+          <div class="export-row" style="padding-bottom:0;border:none">
+            <span class="export-row-label" style="color:rgba(255,255,255,0.9);font-weight:700" data-i18n="grandTotal">Grand Total</span>
+            <span class="export-row-value ltr-field" id="statGrandTotal"
+                  style="color:#fff;font-size:var(--text-lg);font-weight:700">—</span>
+          </div>
+
         </div>
 
-        <!-- Total Fuel -->
-        <div class="stat-card" role="listitem">
-          <div class="stat-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
-              <path d="M3 22h18"></path>
-              <rect x="7" y="14" width="4" height="8"></rect>
-              <path d="M13 14h4v3a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-3z"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value ltr-field" id="statFuelTotal">—</div>
-            <div class="stat-label" data-i18n="totalFuel">Total Fuel</div>
-          </div>
-        </div>
-
-        <!-- Expense Entries count -->
-        <div class="stat-card" role="listitem">
-          <div class="stat-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value ltr-field" id="statExpenseCount">0</div>
-            <div class="stat-label" data-i18n="expenseEntries">Expense Entries</div>
-          </div>
-        </div>
-
-        <!-- Fuel Entries count -->
-        <div class="stat-card" role="listitem">
-          <div class="stat-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <rect x="1" y="3" width="15" height="13"></rect>
-              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-              <circle cx="5.5" cy="18.5" r="2.5"></circle>
-              <circle cx="18.5" cy="18.5" r="2.5"></circle>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value ltr-field" id="statFuelCount">0</div>
-            <div class="stat-label" data-i18n="fuelEntries">Fuel Entries</div>
-          </div>
-        </div>
-
-      </div><!-- /dashboard-grid -->
+      </div><!-- /export-summary-card -->
 
 
       <!-- ------------------------------------------------------------------
@@ -505,15 +530,18 @@
 
     /* ---- Stats ---- */
     const expenseTotal = expenses.reduce(
-      function (sum, e) { return sum + (parseFloat(e.amount) || 0); }, 0);
-
-    const fuelTotal = fuel.reduce(
-      function (sum, e) {
-        return sum + (parseFloat(e.fuelAmount) || 0) + (parseFloat(e.kartaAmount) || 0);
-      }, 0);
+      function (sum, e) { return sum + (parseFloat(e.amount)      || 0); }, 0);
+    const newFuelTotal = fuel.reduce(
+      function (sum, e) { return sum + (parseFloat(e.fuelAmount)  || 0); }, 0);
+    const kartaTotal   = fuel.reduce(
+      function (sum, e) { return sum + (parseFloat(e.kartaAmount) || 0); }, 0);
+    const grandTotal   = expenseTotal + newFuelTotal + kartaTotal;
 
     document.getElementById('statExpenseTotal').textContent = formatCurrency(expenseTotal);
-    document.getElementById('statFuelTotal').textContent    = formatCurrency(fuelTotal);
+    document.getElementById('statFuelTotal').textContent    = formatCurrency(newFuelTotal);
+    document.getElementById('statKartaTotal').textContent   = formatCurrency(kartaTotal);
+    document.getElementById('statGrandTotal').textContent   = formatCurrency(grandTotal);
+    document.getElementById('statDateRange').textContent    = buildDateRange(expenses, fuel);
     document.getElementById('statExpenseCount').textContent = expenses.length;
     document.getElementById('statFuelCount').textContent    = fuel.length;
 

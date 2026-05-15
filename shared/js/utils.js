@@ -282,6 +282,43 @@ function formatNumber(num) {
 }
 
 /* --------------------------------------------------------------------------
+   DATE RANGE STRING
+   Returns "earliest → latest" date string from mixed expense+fuel arrays.
+   -------------------------------------------------------------------------- */
+
+var _DATE_RANGE_MONTHS = {
+  Jan:0, Feb:1, Mar:2, Apr:3, May:4,  Jun:5,
+  Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11,
+};
+
+function buildDateRange(expenses, fuel) {
+  function toMs(dateStr) {
+    if (!dateStr) return null;
+    var parts = String(dateStr).split('-');
+    if (parts.length !== 3) return null;
+    var d = parseInt(parts[0], 10);
+    var m = _DATE_RANGE_MONTHS[parts[1]];
+    var y = parseInt(parts[2], 10);
+    if (isNaN(d) || m === undefined || isNaN(y)) return null;
+    return new Date(y, m, d).getTime();
+  }
+
+  var all = (expenses || []).concat(fuel || []);
+  if (!all.length) return '—';
+
+  var minMs = Infinity, maxMs = -Infinity, minDate = '', maxDate = '';
+  all.forEach(function (e) {
+    var ms = toMs(e.date);
+    if (ms === null) return;
+    if (ms < minMs) { minMs = ms; minDate = e.date; }
+    if (ms > maxMs) { maxMs = ms; maxDate = e.date; }
+  });
+
+  if (!minDate) return '—';
+  return minDate === maxDate ? minDate : minDate + ' → ' + maxDate;
+}
+
+/* --------------------------------------------------------------------------
    KM CALCULATION
    -------------------------------------------------------------------------- */
 

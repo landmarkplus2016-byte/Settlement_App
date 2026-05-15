@@ -79,42 +79,11 @@ function _autoFillDateRange(expenses, fuel) {
 }
 
 function loadExportSummary() {
-  const settings = getSettings() || {};
   const expenses = getExpenses();
   const fuel     = getFuelEntries();
 
-  /* ---- User info ---- */
-  const initials = _buildInitials(settings.name);
-  _setText('exportInitials', initials);
-  _setText('exportName',     settings.name   || '—');
-  _setText('exportMobile',   settings.mobile || '—');
-  _setText('exportTracking', 'T-' + (settings.trackingNumber || '—'));
-
-  /* ---- Auto-fill date range from entries ---- */
+  /* ---- Auto-fill date range inputs from existing entries ---- */
   _autoFillDateRange(expenses, fuel);
-
-  /* ---- Expense stats ---- */
-  const expenseTotal = expenses.reduce(function (s, e) {
-    return s + (parseFloat(e.amount) || 0);
-  }, 0);
-  _setText('exportExpenseCount', String(expenses.length));
-  _setText('exportExpenseTotal', formatCurrency(expenseTotal));
-
-  /* ---- Fuel stats ---- */
-  const fuelTotals = (typeof getFuelTotals === 'function')
-    ? getFuelTotals()
-    : { newFuel: 0, karta: 0, total: 0 };
-
-  _setText('exportFuelCount',  String(fuel.length));
-  _setText('exportFuelTotal',  formatCurrency(fuelTotals.newFuel));
-  _setText('exportKartaTotal', formatCurrency(fuelTotals.karta));
-
-  /* ---- Grand total (expenses + fuel + karta) ---- */
-  const grandTotal = expenseTotal + fuelTotals.newFuel + fuelTotals.karta;
-  _setText('exportGrandTotal', formatCurrency(grandTotal));
-
-  /* ---- Date range ---- */
-  _setText('exportDateRange', _buildDateRange(expenses, fuel));
 
   /* ---- Checklist ---- */
   _setChecklist('checkExpensesIcon', 'checkExpensesLabel',
@@ -286,51 +255,6 @@ function _wireOnce(id, fn) {
     el.addEventListener('click', fn);
     el._exportWired = true;
   }
-}
-
-function _buildInitials(name) {
-  if (!name) return '--';
-  const words = name.trim().split(/\s+/);
-  if (words.length === 1) return words[0].charAt(0).toUpperCase();
-  return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
-}
-
-/* ---- Date range from mixed expenses + fuel entries ---- */
-function _buildDateRange(expenses, fuel) {
-  const MONTHS = {
-    Jan:0, Feb:1, Mar:2, Apr:3, May:4,  Jun:5,
-    Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11,
-  };
-
-  function toMs(dateStr) {
-    if (!dateStr) return null;
-    const parts = String(dateStr).split('-');
-    if (parts.length !== 3) return null;
-    const d = parseInt(parts[0], 10);
-    const m = MONTHS[parts[1]];
-    const y = parseInt(parts[2], 10);
-    if (isNaN(d) || m === undefined || isNaN(y)) return null;
-    return new Date(y, m, d).getTime();
-  }
-
-  const all = expenses.concat(fuel);
-  if (!all.length) return '—';
-
-  let minMs = Infinity;
-  let maxMs = -Infinity;
-  let minDate = '';
-  let maxDate = '';
-
-  all.forEach(function (e) {
-    const ms = toMs(e.date);
-    if (ms === null) return;
-    if (ms < minMs) { minMs = ms; minDate = e.date; }
-    if (ms > maxMs) { maxMs = ms; maxDate = e.date; }
-  });
-
-  if (!minDate) return '—';
-  if (minDate === maxDate) return minDate;
-  return minDate + ' → ' + maxDate;
 }
 
 /* ---- Checklist icon + label update ---- */
