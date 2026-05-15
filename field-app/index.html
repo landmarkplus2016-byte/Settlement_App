@@ -167,7 +167,6 @@
             <span data-i18n="hello" style="font-weight:400;font-size:var(--text-lg);color:var(--color-text-secondary)">Hello,</span>
             <span id="welcomeName"> —</span>
           </div>
-          <div class="welcome-sub" id="welcomeSub"></div>
         </div>
         <div class="dashboard-month-chip" id="monthChip" aria-label="Current month">— —</div>
       </div>
@@ -513,11 +512,6 @@
 
     const monthChip = document.getElementById('monthChip');
     monthChip.textContent = getCurrentMonth() + ' ' + getCurrentYear();
-
-    const welcomeSub = document.getElementById('welcomeSub');
-    welcomeSub.textContent = settings.defaultProject
-      ? settings.defaultProject + ' — ' + settings.defaultCoordinator
-      : settings.defaultCoordinator || '';
 
     /* ---- Load data ---- */
     const expenses = (typeof getExpenses === 'function')
