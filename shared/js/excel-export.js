@@ -428,7 +428,8 @@ function _addApprovalFooterXLSX(ws, settings, startRow, n) {
 
 /* --- Shared row-builder for logo/title/account rows (both sheets) --- */
 function _addHeaderRows(ws, n, title, settings, logoId) {
-  var mid = Math.ceil(n / 2);
+  var LOGO_END    = 3; /* logo occupies cols A–C (1–3) */
+  var ACCT_LBL_END = LOGO_END + 3; /* "Account" label spans D–F (4–6) */
 
   /* Row 1: all green title */
   var r1 = ws.getRow(1); r1.height = 44;
@@ -442,22 +443,23 @@ function _addHeaderRows(ws, n, title, settings, logoId) {
   r1.getCell(1).value = title;
   ws.mergeCells(1, 1, 1, n);
 
-  /* Row 2: left half LBLUE Account label, right half white value */
+  /* Row 2: A–C white (logo area) | D–F LBLUE "Account" | G–n white value */
   var r2 = ws.getRow(2); r2.height = 20;
   for (var c = 1; c <= n; c++) {
-    var isLbl = c <= mid, isVal = c > mid;
+    var isLbl = c > LOGO_END && c <= ACCT_LBL_END;
+    var isVal = c > ACCT_LBL_END;
     _xCell(r2.getCell(c), undefined, {
       fill:  isLbl ? _XL_LBLUE : _XL_WHITE,
-      font:  isLbl ? {bold:true,color:{argb:_XL_NAVY},size:11} : {color:{argb:_XL_NAVY},size:11},
-      align: {horizontal:'center',vertical:'middle'},
+      font:  isLbl ? {bold:true,color:{argb:_XL_NAVY},size:11} : isVal ? {color:{argb:_XL_NAVY},size:11} : undefined,
+      align: (isLbl||isVal) ? {horizontal:'center',vertical:'middle'} : undefined,
     });
   }
-  r2.getCell(1).value = 'Account';
-  r2.getCell(mid + 1).value = settings.accountType || 'New';
-  ws.mergeCells(2, 1, 2, mid);
-  ws.mergeCells(2, mid + 1, 2, n);
+  r2.getCell(LOGO_END + 1).value = 'Account';
+  r2.getCell(ACCT_LBL_END + 1).value = settings.accountType || 'New';
+  ws.mergeCells(2, LOGO_END + 1, 2, ACCT_LBL_END);    /* D–F: "Account" label */
+  ws.mergeCells(2, ACCT_LBL_END + 1, 2, n);            /* G–n: value */
 
-  /* Logo overlays top-left of header rows (floats over cells) */
+  /* Logo overlays rows 1–2, cols A–C (floats over cells) */
   if (logoId !== null && logoId !== undefined) {
     ws.addImage(logoId, { tl:{col:0,row:0}, br:{col:3,row:2} });
   }
