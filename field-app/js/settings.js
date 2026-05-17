@@ -24,7 +24,6 @@ function loadSettings() {
 
   /* ---- Text / number inputs ---- */
   _setInputVal('fieldName',            settings.name);
-  _setInputVal('fieldMobile',          settings.mobile);
   _setInputVal('fieldTrackingNumber',  settings.trackingNumber);
   _setInputVal('fieldCoordinator',     settings.defaultCoordinator);
   _setInputVal('fieldDriver',          settings.defaultDriver);
@@ -58,7 +57,6 @@ function saveSettings() {
 
   /* Read values */
   const name            = _getInputVal('fieldName');
-  const mobile          = _getInputVal('fieldMobile');
   const trackingRaw     = _getInputVal('fieldTrackingNumber');
   const accountType     = _getSelectVal('fieldAccountType') || 'New';
   const defaultCoordinator = _getInputVal('fieldCoordinator');
@@ -72,11 +70,6 @@ function saveSettings() {
 
   if (!name) {
     _showFieldError('fieldName', 'errorName');
-    hasError = true;
-  }
-
-  if (!mobile) {
-    _showFieldError('fieldMobile', 'errorMobile');
     hasError = true;
   }
 
@@ -96,7 +89,6 @@ function saveSettings() {
   /* ---- Build and persist the settings object (exact CLAUDE.md schema) ---- */
   const settings = {
     name,
-    mobile,
     defaultCoordinator,
     defaultProject,
     defaultDriver,

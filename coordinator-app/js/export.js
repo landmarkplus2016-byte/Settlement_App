@@ -256,19 +256,21 @@ function buildExportSummary() {
    ========================================================================== */
 
 function buildCoordFilename() {
-  var member    = importData ? (importData.teamMember || {}) : {};
-  var fullName  = member.name || 'Unknown';
-  var firstName = fullName.trim().split(/\s+/)[0];
-  var safeName  = firstName.replace(/[^a-zA-Z0-9؀-ۿ]/g, '_'); /* keep Arabic chars */
-  var tracking  = member.trackingNumber || (importData && importData.trackingNumber) || 0;
+  var member   = importData ? (importData.teamMember || {}) : {};
+  var fullName = (member.name || 'Unknown').trim();
+  var safeName = fullName.replace(/\s+/g, '_');
 
-  var month = (importData && importData.month)
-    || _deriveMonth(importData ? importData.expenses : [], importData ? importData.fuel : [])
-    || 'unknown';
+  var allDates = _collectAllDates(
+    importData ? (importData.expenses || []) : [],
+    importData ? (importData.fuel     || []) : []
+  );
 
-  var year = new Date().getFullYear();
+  if (!allDates.length) return safeName + '-from-unknown.xlsx';
 
-  return 'APPROVED_' + safeName + '_T' + tracking + '_' + month + year + '.xlsx';
+  var startStr = _formatDateFilename(allDates[0]);
+  var endStr   = _formatDateFilename(allDates[allDates.length - 1]);
+
+  return safeName + '-from' + startStr + '-' + endStr + '.xlsx';
 }
 
 
@@ -363,4 +365,31 @@ function _deriveMonth(expenses, fuel) {
   if (expenses && expenses.length > 0 && expenses[0].month) return expenses[0].month;
   if (fuel      && fuel.length      > 0 && fuel[0].month)      return fuel[0].month;
   return '';
+}
+
+/* Parse "DD-Mon-YYYY" → Date; returns null on failure */
+function _parseEntryDate(dateStr) {
+  if (!dateStr) return null;
+  var parts  = dateStr.split('-');
+  if (parts.length !== 3) return null;
+  var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+  var mon    = months[parts[1]];
+  if (mon === undefined) return null;
+  return new Date(parseInt(parts[2], 10), mon, parseInt(parts[0], 10));
+}
+
+/* Return sorted array of all parsed Date objects from expenses + fuel */
+function _collectAllDates(expenses, fuel) {
+  var dates = [];
+  expenses.forEach(function (e) { var d = _parseEntryDate(e.date); if (d) dates.push(d); });
+  fuel.forEach(    function (f) { var d = _parseEntryDate(f.date); if (d) dates.push(d); });
+  dates.sort(function (a, b) { return a - b; });
+  return dates;
+}
+
+/* Format Date as "DD-mon-YY" (e.g. "19-apr-26") for filename */
+function _formatDateFilename(date) {
+  var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var yy     = String(date.getFullYear()).slice(-2);
+  return date.getDate() + '-' + months[date.getMonth()] + '-' + yy;
 }

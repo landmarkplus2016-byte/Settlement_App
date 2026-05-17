@@ -23,8 +23,7 @@ function loadSettings() {
     return;
   }
 
-  _setInputVal('fieldName',   settings.name);
-  _setInputVal('fieldMobile', settings.mobile);
+  _setInputVal('fieldName', settings.name);
   _setLangRadio(settings.language || 'en');
   _renderAvatar(settings);
 }
@@ -36,8 +35,7 @@ function loadSettings() {
 function saveSettings() {
   _clearAllErrors();
 
-  var name   = _getInputVal('fieldName');
-  var mobile = _getInputVal('fieldMobile');
+  var name = _getInputVal('fieldName');
 
   var langRadio = document.querySelector('input[name="language"]:checked');
   var language  = langRadio ? langRadio.value : 'en';
@@ -49,11 +47,6 @@ function saveSettings() {
     hasError = true;
   }
 
-  if (!mobile) {
-    _showFieldError('fieldMobile', 'errorMobile');
-    hasError = true;
-  }
-
   if (hasError) {
     var firstError = document.querySelector('.form-input.is-error');
     if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -62,7 +55,6 @@ function saveSettings() {
 
   var settings = {
     name:     name,
-    mobile:   mobile,
     language: language,
   };
 

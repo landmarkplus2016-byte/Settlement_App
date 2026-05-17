@@ -14,7 +14,7 @@ const TRANSLATIONS = {
   en: {
 
     /* --- App Titles --- */
-    fieldAppTitle: 'ExpenseFuel',
+    fieldAppTitle: 'Expense-Fuel Tracker',
     coordAppTitle: 'ExpenseFuel — Coordinator',
 
     /* --- Navigation --- */
@@ -169,7 +169,7 @@ const TRANSLATIONS = {
   ar: {
 
     /* --- App Titles --- */
-    fieldAppTitle: 'ExpenseFuel',
+    fieldAppTitle: 'Expense-Fuel Tracker',
     coordAppTitle: 'ExpenseFuel — المنسق',                      /* المنسق  */
 
     /* --- Navigation --- */
