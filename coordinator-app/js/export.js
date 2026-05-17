@@ -82,19 +82,19 @@ function buildChecklist() {
 
   /* ---- Partition entries by review status ---- */
   var pendingCount  = 0;
-  var flaggedExpCnt = 0;
-  var flaggedFuelCnt = 0;
+  var rejectedExpCnt = 0;
+  var rejectedFuelCnt = 0;
 
   expenses.forEach(function (e) {
     var status = _statusOf(e.id);
     if (status === 'pending') pendingCount++;
-    if (status === 'flagged') flaggedExpCnt++;
+    if (status === 'rejected') rejectedExpCnt++;
   });
 
   fuel.forEach(function (f) {
     var status = _statusOf(f.id);
     if (status === 'pending') pendingCount++;
-    if (status === 'flagged') flaggedFuelCnt++;
+    if (status === 'rejected') rejectedFuelCnt++;
   });
 
   /* Approved-only fuel — KM continuity check on the subset being exported */
@@ -116,8 +116,8 @@ function buildChecklist() {
   );
 
   var allReviewed      = pendingCount    === 0;
-  var noFlaggedExpenses = flaggedExpCnt  === 0;
-  var noFlaggedFuel    = flaggedFuelCnt  === 0;
+  var noFlaggedExpenses = rejectedExpCnt  === 0;
+  var noFlaggedFuel    = rejectedFuelCnt  === 0;
   var kmOk             = kmIssues.length === 0;
 
   /* Total validation passes if declared values weren't provided (no comparison possible) */
@@ -140,17 +140,17 @@ function buildChecklist() {
     },
     {
       pass:   noFlaggedExpenses,
-      label:  'No flagged expenses',
+      label:  'No rejected expenses',
       detail: noFlaggedExpenses
-        ? 'All expense entries approved or pending.'
-        : flaggedExpCnt + ' expense entr' + (flaggedExpCnt === 1 ? 'y' : 'ies') + ' flagged — excluded from export.',
+        ? 'All expense entries approved.'
+        : rejectedExpCnt + ' expense entr' + (rejectedExpCnt === 1 ? 'y' : 'ies') + ' rejected — excluded from export.',
     },
     {
       pass:   noFlaggedFuel,
-      label:  'No flagged fuel entries',
+      label:  'No rejected fuel entries',
       detail: noFlaggedFuel
-        ? 'All fuel entries approved or pending.'
-        : flaggedFuelCnt + ' fuel entr' + (flaggedFuelCnt === 1 ? 'y' : 'ies') + ' flagged — excluded from export.',
+        ? 'All fuel entries approved.'
+        : rejectedFuelCnt + ' fuel entr' + (rejectedFuelCnt === 1 ? 'y' : 'ies') + ' rejected — excluded from export.',
     },
     {
       pass:   kmOk,
@@ -224,9 +224,9 @@ function buildExportSummary() {
   var approvedExpenses = expenses.filter(function (e) { return _statusOf(e.id) === 'approved'; });
   var approvedFuel     = fuel.filter(    function (f) { return _statusOf(f.id) === 'approved'; });
 
-  var flaggedCount = 0;
-  expenses.forEach(function (e) { if (_statusOf(e.id) === 'flagged') flaggedCount++; });
-  fuel.forEach(    function (f) { if (_statusOf(f.id) === 'flagged') flaggedCount++; });
+  var rejectedCount = 0;
+  expenses.forEach(function (e) { if (_statusOf(e.id) === 'rejected') rejectedCount++; });
+  fuel.forEach(    function (f) { if (_statusOf(f.id) === 'rejected') rejectedCount++; });
 
   var expTotal   = approvedExpenses.reduce(function (s, e) { return s + (parseFloat(e.amount)     || 0); }, 0);
   var fuelTotal  = approvedFuel.reduce(    function (s, f) { return s + (parseFloat(f.fuelAmount)  || 0); }, 0);
@@ -243,7 +243,7 @@ function buildExportSummary() {
   _setText('statApprovedKarta', 'EGP ' + _fmt(kartaTotal));
 
   _setText('statFlagged',
-    flaggedCount + ' entr' + (flaggedCount === 1 ? 'y' : 'ies') + ' excluded');
+    rejectedCount + ' entr' + (rejectedCount === 1 ? 'y' : 'ies') + ' excluded');
 
   var member = importData ? (importData.teamMember || {}) : {};
   _setText('summarySubtitle',
@@ -276,20 +276,20 @@ function buildCoordFilename() {
    EXPORT TRIGGER
    ========================================================================== */
 
-function triggerFinalExport() {
+async function triggerFinalExport() {
   var btn = document.getElementById('btnExport');
-  if (btn) { btn.disabled = true; }
+  if (btn) btn.disabled = true;
 
   try {
-    var wb       = generateCoordinatorExcel(importData, reviewData);
+    var wb       = await generateCoordinatorExcel(importData, reviewData);
     var filename = buildCoordFilename();
 
-    triggerExcelDownload(wb, filename);
+    /* ExcelJS: write to buffer then trigger download via FileSaver */
+    var buf = await wb.xlsx.writeBuffer();
+    saveAs(new Blob([buf], { type: 'application/octet-stream' }), filename);
 
-    /* Update planned filename display with actual filename used */
     _setText('exportedFilenameText', filename);
 
-    /* Switch to success state */
     var exportSection  = document.getElementById('exportBtnSection');
     var successSection = document.getElementById('successSection');
     if (exportSection)  exportSection.classList.add('hidden');

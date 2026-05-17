@@ -244,6 +244,35 @@
       margin-top: var(--sp-2);
       border-top: 1px solid var(--color-border);
     }
+
+    /* Inline editable cell inputs (same as review-expenses) */
+    .cell-edit-input {
+      width: 100%;
+      padding: 3px 6px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-family: var(--font);
+      color: var(--color-text-primary);
+      background: transparent;
+      transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      min-width: 55px;
+      box-sizing: border-box;
+    }
+    .cell-edit-input:hover  { border-color: var(--color-border); background: var(--color-surface); }
+    .cell-edit-input:focus  { outline: none; border-color: var(--color-border-focus); background: var(--color-surface); box-shadow: 0 0 0 2px var(--color-primary-light); }
+    .cell-edit-input[type="number"] { text-align: right; -moz-appearance: textfield; font-weight: 600; }
+    .cell-edit-input[type="number"]::-webkit-outer-spin-button,
+    .cell-edit-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    textarea.cell-edit-input { display: block; resize: none; overflow: hidden; line-height: 1.5; padding-top: 4px; padding-bottom: 4px; min-height: 28px; word-break: break-all; }
+
+    .row-warning  .cell-edit-input:hover, .row-warning  .cell-edit-input:focus  { background: #fffde7; }
+    .row-approved .cell-edit-input:hover, .row-approved .cell-edit-input:focus  { background: #f0fdf4; }
+    .row-flagged  .cell-edit-input:hover, .row-flagged  .cell-edit-input:focus  { background: #fff5f5; }
+
+    /* KM gap: amber tint on the start-km input */
+    .cell-edit-input.km-gap { color: var(--color-warning); border-color: #fde68a; }
   </style>
 </head>
 
@@ -335,23 +364,6 @@
         </a>
       </div>
 
-      <!-- Auto-validation banner -->
-      <div id="validationBanner" class="validation-banner hidden" role="alert" aria-live="polite">
-        <div class="validation-banner-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2.5"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-        </div>
-        <div class="validation-banner-body">
-          <div class="validation-banner-title" id="validationBannerTitle"></div>
-          <ul class="validation-issue-list" id="validationIssueList"></ul>
-        </div>
-      </div>
-
       <!-- Review toolbar -->
       <div class="review-toolbar" id="reviewToolbar" role="toolbar" aria-label="Review actions">
         <div class="review-toolbar-left">
@@ -366,6 +378,21 @@
         </div>
 
         <div class="review-toolbar-right">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnAutoFillJC"
+                  title="Fill empty Job Code cells from the Coordinator Tracking sheet">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+              <line x1="12" y1="2" x2="12" y2="5"></line>
+              <line x1="12" y1="19" x2="12" y2="22"></line>
+              <line x1="2" y1="12" x2="5" y2="12"></line>
+              <line x1="19" y1="12" x2="22" y2="12"></line>
+            </svg>
+            Auto-fill JC
+          </button>
+
           <button type="button" class="toolbar-bulk-approve" id="btnApproveAll">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2.5"
@@ -401,13 +428,13 @@
                 <th data-i18n="jobCode">Job Code</th>
                 <th data-i18n="startKm">Start KM</th>
                 <th data-i18n="endKm">End KM</th>
-                <th data-i18n="distance">Dist.</th>
-                <th data-i18n="fuelAmount">Fuel</th>
+                <th data-i18n="fuelAmount">Fuel (EGP)</th>
                 <th data-i18n="kartaAmount">Karta</th>
                 <th data-i18n="area">Area</th>
                 <th data-i18n="driver">Driver</th>
-                <th style="min-width:110px" data-i18n="pending">Status</th>
-                <th style="min-width:160px" data-i18n="comment">Note</th>
+                <th>City</th>
+                <th>Coordinator</th>
+                <th style="min-width:120px">Approval STS</th>
               </tr>
             </thead>
             <tbody id="fuelTableBody">
@@ -475,6 +502,7 @@
   <script src="../shared/js/validations.js"></script>
   <script src="js/app.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/coord-tracking.js"></script>
   <script src="js/review.js"></script>
 
 </body>

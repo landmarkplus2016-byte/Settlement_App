@@ -62,8 +62,8 @@ function initReviewPage() {
 
   entries.forEach(function (e) {
     reviewData[e.id] = saved[e.id]
-      ? { status: saved[e.id].status || 'pending', coordinatorNote: saved[e.id].coordinatorNote || '' }
-      : { status: 'pending', coordinatorNote: '' };
+      ? { status: _normalizeStatus(saved[e.id].status), coordinatorNote: saved[e.id].coordinatorNote || '' }
+      : { status: 'approved', coordinatorNote: '' };
   });
 
   /* ---- 5. Show content ---- */
@@ -78,12 +78,7 @@ function initReviewPage() {
   var subtitleEl = document.getElementById('pageSubtitle');
   if (subtitleEl) subtitleEl.textContent = member.mobile || '';
 
-  var chip = document.getElementById('trackingChip');
-  var tn   = member.trackingNumber || importData.trackingNumber;
-  if (chip && tn) {
-    chip.textContent = 'T-' + tn;
-    chip.classList.remove('hidden');
-  }
+  /* trackingChip intentionally not shown */
 
   /* Cross-link to the other review page for the same import */
   var crossLink = entryType === 'fuel'
@@ -106,14 +101,12 @@ function initReviewPage() {
   });
 
   _autoFlagIssues(validationResult);
-  _showValidationBanner(_buildBannerIssues(validationResult));
 
   /* ---- 8. Render table ---- */
   if (entryType === 'expenses') {
     renderExpenseReview(importData.expenses || []);
   } else {
     renderFuelReview(importData.fuel || []);
-    _renderTotalsRow(importData.fuel || []);
   }
 
   /* ---- 9. Initial progress display ---- */
@@ -123,6 +116,7 @@ function initReviewPage() {
   _bindBtn('btnApproveAll',         approveAll);
   _bindBtn('btnSaveReviews',        saveReviews);
   _bindBtn('btnSaveReviewsBottom',  saveReviews);
+  _bindBtn('btnAutoFillJC',         applyCoordTracking);
 }
 
 
@@ -144,7 +138,7 @@ function _autoFlagIssues(v) {
       if (!id) return;
       _errorEntryIds[id] = true;
       if (reviewData[id] && reviewData[id].status === 'pending') {
-        reviewData[id].status          = 'flagged';
+        reviewData[id].status          = 'rejected';
         reviewData[id].coordinatorNote = reviewData[id].coordinatorNote || err.errors[0] || 'Validation error';
       }
     });
@@ -155,7 +149,7 @@ function _autoFlagIssues(v) {
       if (!id) return;
       _errorEntryIds[id] = true;
       if (reviewData[id] && reviewData[id].status === 'pending') {
-        reviewData[id].status          = 'flagged';
+        reviewData[id].status          = 'rejected';
         reviewData[id].coordinatorNote = reviewData[id].coordinatorNote || iss.message;
       }
     });
@@ -168,7 +162,7 @@ function _autoFlagIssues(v) {
       if (!id) return;
       _errorEntryIds[id] = true;
       if (reviewData[id] && reviewData[id].status === 'pending') {
-        reviewData[id].status          = 'flagged';
+        reviewData[id].status          = 'rejected';
         reviewData[id].coordinatorNote = reviewData[id].coordinatorNote || err.errors[0] || 'Validation error';
       }
     });
@@ -179,7 +173,7 @@ function _autoFlagIssues(v) {
       if (!id) return;
       _kmMismatchIds[id] = true;
       if (reviewData[id] && reviewData[id].status === 'pending') {
-        reviewData[id].status          = 'flagged';
+        reviewData[id].status          = 'rejected';
         reviewData[id].coordinatorNote = reviewData[id].coordinatorNote || 'KM gap detected';
       }
     });
@@ -190,7 +184,7 @@ function _autoFlagIssues(v) {
       if (!id) return;
       _errorEntryIds[id] = true;
       if (reviewData[id] && reviewData[id].status === 'pending') {
-        reviewData[id].status          = 'flagged';
+        reviewData[id].status          = 'rejected';
         reviewData[id].coordinatorNote = reviewData[id].coordinatorNote || iss.message;
       }
     });
@@ -323,25 +317,18 @@ function renderExpenseReview(expenses) {
     tdNum.textContent = String(i + 1);
     tr.appendChild(tdNum);
 
-    /* Date */ tr.appendChild(_td(_esc(e.date  || '—'), 'ltr-field'));
-    /* Project */ tr.appendChild(_td(_esc(e.projectName || '—')));
-    /* Site ID */ tr.appendChild(_td(_esc(e.siteId      || '—'), 'ltr-field'));
-    /* Job Code */ tr.appendChild(_td(_esc(e.jobCode    || '—'), 'ltr-field'));
-    /* Category */ tr.appendChild(_td(_esc(e.category   || '—')));
+    /* Date */        tr.appendChild(_editTd(e.id, 'date',            e.date          || '', { ltr: true,  placeholder: 'DD-Mon-YYYY' }));
+    /* Project */     tr.appendChild(_editTd(e.id, 'projectName',     e.projectName   || '', { placeholder: 'Project' }));
+    /* Site ID */     tr.appendChild(_editTd(e.id, 'siteId',          e.siteId        || '', { ltr: true,  placeholder: 'Site ID', wrap: true }));
+    /* Job Code */    tr.appendChild(_editTd(e.id, 'jobCode',         e.jobCode       || '', { ltr: true,  placeholder: 'JC',      wrap: true, jcCell: e.id }));
+    /* Category */    tr.appendChild(_editTd(e.id, 'category',        e.category      || '', { placeholder: 'Category' }));
+    /* Description */ tr.appendChild(_editTd(e.id, 'itemDescription', e.itemDescription || '', { minWidth: 140, placeholder: 'Description' }));
+    /* Amount */      tr.appendChild(_editTd(e.id, 'amount',          e.amount        || 0,  { type: 'number', ltr: true, min: 0, step: 'any' }));
 
-    /* Description (truncated) */
-    var tdDesc = document.createElement('td');
-    tdDesc.className   = 'desc-cell';
-    tdDesc.title       = e.itemDescription || '—';
-    tdDesc.textContent = e.itemDescription || '—';
-    tr.appendChild(tdDesc);
-
-    /* Amount */
-    tr.appendChild(_td(_esc(String(e.amount || 0)), 'amount-cell'));
-
-    /* Status select + Note input */
+    /* Comment from the original sheet — editable */
+    tr.appendChild(_editTd(e.id, 'comment', e.comment || '', { placeholder: 'Comment…', minWidth: 130 }));
+    /* Approval status */
     tr.appendChild(_buildStatusCell(e.id, state, i));
-    tr.appendChild(_buildNoteCell(e.id, state, i, false));
 
     if (tbody) tbody.appendChild(tr);
   });
@@ -372,7 +359,6 @@ function renderFuelReview(fuel) {
 
     var startKm  = parseFloat(f.startKm) || 0;
     var endKm    = parseFloat(f.endKm)   || 0;
-    var distance = endKm > startKm ? endKm - startKm : 0;
 
     var tr = document.createElement('tr');
     tr.dataset.entryId = f.id;
@@ -391,26 +377,28 @@ function renderFuelReview(fuel) {
     }
     tr.appendChild(tdNum);
 
-    /* Date */ tr.appendChild(_td(_esc(f.date || '—'), 'ltr-field'));
-    /* Project */ tr.appendChild(_td(_esc(f.projectName || '—')));
-    /* Site ID */ tr.appendChild(_td(_esc(f.siteId      || '—'), 'ltr-field'));
-    /* Job Code */ tr.appendChild(_td(_esc(f.jobCode    || '—'), 'ltr-field'));
+    var U = { updateFn: updateFuelField }; /* shorthand opts base for fuel fields */
 
-    /* Start KM — amber if gap */
-    var tdStart = _td(_esc(String(f.startKm || 0)), 'num-cell');
-    if (hasKmGap) tdStart.style.color = 'var(--color-warning)';
-    tr.appendChild(tdStart);
+    /* Date */        tr.appendChild(_editTd(f.id, 'date',        f.date        || '', Object.assign({}, U, { ltr: true, placeholder: 'DD-Mon-YYYY' })));
+    /* Project */     tr.appendChild(_editTd(f.id, 'projectName', f.projectName || '', Object.assign({}, U, { placeholder: 'Project' })));
+    /* Site ID */     tr.appendChild(_editTd(f.id, 'siteId',      f.siteId      || '', Object.assign({}, U, { ltr: true, placeholder: 'Site ID', wrap: true })));
+    /* Job Code */    tr.appendChild(_editTd(f.id, 'jobCode',     f.jobCode     || '', Object.assign({}, U, { ltr: true, placeholder: 'JC', wrap: true, jcCell: f.id })));
 
-    /* End KM */ tr.appendChild(_td(_esc(String(f.endKm       || 0)), 'num-cell'));
-    /* Dist  */ tr.appendChild(_td(_esc(String(distance)),            'num-cell'));
-    /* Fuel  */ tr.appendChild(_td(_esc(String(f.fuelAmount   || 0)), 'fuel-cell'));
-    /* Karta */ tr.appendChild(_td(_esc(String(f.kartaAmount  || 0)), 'num-cell'));
-    /* Area  */ tr.appendChild(_td(_esc(f.area   || '—')));
-    /* Driver */ tr.appendChild(_td(_esc(f.driver || '—')));
+    /* Start KM — amber tint on input if KM gap */
+    var tdStartKm = _editTd(f.id, 'startKm', f.startKm || 0, Object.assign({}, U, { type: 'number', ltr: true, min: 0 }));
+    if (hasKmGap) { var skInp = tdStartKm.querySelector('input'); if (skInp) skInp.classList.add('km-gap'); }
+    tr.appendChild(tdStartKm);
 
-    /* Status select + Note input (km-warning variant for note) */
-    tr.appendChild(_buildStatusCell(f.id, state, i, hasKmGap));
-    tr.appendChild(_buildNoteCell(f.id, state, i, hasKmGap));
+    /* End KM */      tr.appendChild(_editTd(f.id, 'endKm',      f.endKm      || 0, Object.assign({}, U, { type: 'number', ltr: true, min: 0 })));
+    /* Fuel */        tr.appendChild(_editTd(f.id, 'fuelAmount',  f.fuelAmount  || 0, Object.assign({}, U, { type: 'number', ltr: true, min: 0 })));
+    /* Karta */       tr.appendChild(_editTd(f.id, 'kartaAmount', f.kartaAmount || 0, Object.assign({}, U, { type: 'number', ltr: true, min: 0 })));
+    /* Area */        tr.appendChild(_editTd(f.id, 'area',        f.area        || '', Object.assign({}, U, { placeholder: 'Area' })));
+    /* Driver */      tr.appendChild(_editTd(f.id, 'driver',      f.driver      || '', Object.assign({}, U, { placeholder: 'Driver' })));
+    /* City */        tr.appendChild(_editTd(f.id, 'city',        f.city        || '', Object.assign({}, U, { placeholder: 'City' })));
+    /* Coordinator */ tr.appendChild(_editTd(f.id, 'coordinator', f.coordinator || '', Object.assign({}, U, { placeholder: 'Coordinator' })));
+
+    /* Approval status — last column */
+    tr.appendChild(_buildStatusCell(f.id, state, i));
 
     if (tbody) tbody.appendChild(tr);
   });
@@ -429,26 +417,30 @@ function _renderTotalsRow(fuel) {
   var tr = document.createElement('tr');
   tr.className = 'totals-row';
 
-  [                    /* col label    class        */
+  /* # | Date | Project | Site ID | Job Code | Start KM | End KM */
+  [
     ['Totals', 'row-num'],
     ['—', ''], ['—', ''], ['—', ''], ['—', ''],
-    ['—', 'num-cell'], ['—', 'num-cell'], ['—', 'num-cell'],
+    ['—', 'num-cell'], ['—', 'num-cell'],
   ].forEach(function (pair) { tr.appendChild(_footTd(pair[0], pair[1])); });
 
+  /* Fuel total */
   var tdFuel = document.createElement('td');
-  tdFuel.className  = 'fuel-cell total-value';
+  tdFuel.className   = 'fuel-cell total-value';
   tdFuel.textContent = String(Math.round(totalFuel  * 100) / 100);
   tr.appendChild(tdFuel);
 
+  /* Karta total */
   var tdKarta = document.createElement('td');
   tdKarta.className  = 'num-cell total-value';
   tdKarta.textContent = String(Math.round(totalKarta * 100) / 100);
   tr.appendChild(tdKarta);
 
-  tr.appendChild(_footTd('—'));   /* Area   */
-  tr.appendChild(_footTd('—'));   /* Driver */
-  tr.appendChild(_footTd(''));    /* Status */
-  tr.appendChild(_footTd(''));    /* Note   */
+  tr.appendChild(_footTd('—'));   /* Area        */
+  tr.appendChild(_footTd('—'));   /* Driver      */
+  tr.appendChild(_footTd('—'));   /* City        */
+  tr.appendChild(_footTd('—'));   /* Coordinator */
+  tr.appendChild(_footTd(''));    /* Approval STS */
 
   tfoot.appendChild(tr);
 }
@@ -542,6 +534,69 @@ function approveAll() {
 
 
 /* ==========================================================================
+   AUTO-FILL JOB CODES FROM COORDINATOR TRACKING
+   Reads coord_tracking from localStorage, loops through all expense entries,
+   splits siteId by "/" to handle composite sites, looks up each site's JC,
+   updates the in-memory data + the visible table cell.
+   ========================================================================== */
+
+function applyCoordTracking() {
+  /* Guard: tracking must be loaded */
+  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+  if (!tracking || !tracking.map || tracking.siteCount === 0) {
+    showToast('No coordinator tracking loaded — upload it on the Import page first', 'warning');
+    return;
+  }
+
+  /* Work on whichever tab is currently open */
+  var entries = importData
+    ? (entryType === 'fuel' ? (importData.fuel || []) : (importData.expenses || []))
+    : [];
+
+  var filled  = 0;
+  var skipped = 0;
+
+  entries.forEach(function (e) {
+    var jc = (typeof lookupJC === 'function')
+      ? lookupJC(e.siteId, tracking.map)
+      : '';
+
+    if (!jc) { skipped++; return; }
+
+    /* Update in-memory entry */
+    e.jobCode = jc;
+    filled++;
+
+    /* Update the visible textarea (Job Code uses wrap:true → textarea) */
+    var jcEl = document.querySelector('[data-jc-cell="' + e.id + '"]');
+    if (jcEl) {
+      jcEl.value = jc;
+      jcEl.style.height = 'auto';
+      jcEl.style.height = jcEl.scrollHeight + 'px';
+    }
+  });
+
+  /* Persist the updated import data so it survives a page reload */
+  if (filled > 0 && importId) {
+    saveToStorage('imported_' + importId, importData);
+  }
+
+  if (filled > 0) {
+    var msg = 'Auto-filled ' + filled + ' Job Code' + (filled !== 1 ? 's' : '');
+    if (skipped > 0) msg += ' (' + skipped + ' site' + (skipped !== 1 ? 's' : '') + ' not found in tracking)';
+    showToast(msg, 'success');
+  } else {
+    showToast(
+      skipped > 0
+        ? 'No matching sites found in coordinator tracking'
+        : 'Nothing to fill — all Job Codes already set',
+      'info'
+    );
+  }
+}
+
+
+/* ==========================================================================
    SAVE REVIEWS
    ========================================================================== */
 
@@ -595,11 +650,11 @@ function _buildStatusCell(id, state, rowIndex, isKmGap) {
   sel.className = 'status-select';
   sel.setAttribute('aria-label', 'Status for row ' + (rowIndex + 1));
 
-  ['pending', 'approved', 'flagged'].forEach(function (val) {
+  [['approved', 'Approved'], ['rejected', 'Rejected']].forEach(function (pair) {
     var opt = document.createElement('option');
-    opt.value       = val;
-    opt.textContent = val.charAt(0).toUpperCase() + val.slice(1);
-    if (val === state.status) opt.selected = true;
+    opt.value       = pair[0];
+    opt.textContent = pair[1];
+    if (pair[0] === state.status) opt.selected = true;
     sel.appendChild(opt);
   });
 
@@ -639,6 +694,86 @@ function _td(html, extraClass) {
   return td;
 }
 
+/* Build an editable <td><input|textarea></td> for expense review rows.
+   opts: { type, ltr, placeholder, min, step, minWidth, jcCell, wrap }
+   wrap:true → uses <textarea> so multi-value cells (Site ID, Job Code) can wrap. */
+function _editTd(entryId, field, value, opts) {
+  opts = opts || {};
+  var td  = document.createElement('td');
+  var el;
+
+  if (opts.wrap) {
+    /* ---- Wrapping textarea (Site ID, Job Code) ---- */
+    el = document.createElement('textarea');
+    el.rows = 1;
+
+    /* Auto-resize to fit content height */
+    function _autoResize() {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+    el.addEventListener('input', _autoResize);
+    setTimeout(_autoResize, 0); /* run after element is in DOM */
+
+    el.addEventListener('change', function () {
+      var fn = opts.updateFn || updateExpenseField;
+      fn(entryId, field, el.value, 'text');
+    });
+
+  } else {
+    /* ---- Standard input ---- */
+    el = document.createElement('input');
+    el.type = opts.type || 'text';
+
+    if (opts.min  !== undefined) el.min  = String(opts.min);
+    if (opts.step !== undefined) el.step = String(opts.step);
+
+    el.addEventListener('change', function () {
+      var fn = opts.updateFn || updateExpenseField;
+      fn(entryId, field, el.value, el.type);
+    });
+  }
+
+  el.value       = (value !== null && value !== undefined) ? String(value) : '';
+  el.placeholder = opts.placeholder || '';
+  el.className   = 'cell-edit-input' + (opts.ltr ? ' ltr-field' : '');
+
+  if (opts.minWidth) el.style.minWidth = opts.minWidth + 'px';
+
+  /* Tag JC elements so applyCoordTracking() can update them */
+  if (opts.jcCell) el.dataset.jcCell = opts.jcCell;
+
+  td.appendChild(el);
+  return td;
+}
+
+/* Persist a single field change back into importData + localStorage */
+function updateExpenseField(id, field, rawValue, inputType) {
+  if (!importData || !importData.expenses) return;
+  for (var k = 0; k < importData.expenses.length; k++) {
+    if (importData.expenses[k].id === id) {
+      importData.expenses[k][field] = (inputType === 'number')
+        ? (parseFloat(rawValue) || 0)
+        : rawValue;
+      break;
+    }
+  }
+  if (importId) saveToStorage('imported_' + importId, importData);
+}
+
+function updateFuelField(id, field, rawValue, inputType) {
+  if (!importData || !importData.fuel) return;
+  for (var k = 0; k < importData.fuel.length; k++) {
+    if (importData.fuel[k].id === id) {
+      importData.fuel[k][field] = (inputType === 'number')
+        ? (parseFloat(rawValue) || 0)
+        : rawValue;
+      break;
+    }
+  }
+  if (importId) saveToStorage('imported_' + importId, importData);
+}
+
 function _footTd(text, extraClass) {
   var td = document.createElement('td');
   if (extraClass) td.className = extraClass;
@@ -646,17 +781,22 @@ function _footTd(text, extraClass) {
   return td;
 }
 
+function _normalizeStatus(s) {
+  if (s === 'approved') return 'approved';
+  if (s === 'rejected' || s === 'flagged') return 'rejected';
+  return 'approved'; /* treat old 'pending' as approved */
+}
+
 function _applyRowClass(tr, status) {
   tr.classList.remove('row-approved', 'row-flagged');
   if (status === 'approved') tr.classList.add('row-approved');
-  if (status === 'flagged')  tr.classList.add('row-flagged');
+  if (status === 'rejected') tr.classList.add('row-flagged');
 }
 
 function _applySelectClass(sel, status) {
   sel.className = 'status-select';
   if (status === 'approved') sel.classList.add('status-approved');
-  if (status === 'flagged')  sel.classList.add('status-flagged');
-  if (status === 'pending')  sel.classList.add('status-pending');
+  if (status === 'rejected') sel.classList.add('status-flagged');
 }
 
 function _esc(str) {

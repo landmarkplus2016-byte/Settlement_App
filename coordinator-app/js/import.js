@@ -78,14 +78,17 @@ function handleFile(file) {
 
   var name = file.name.toLowerCase();
 
+  var excelExts = ['.xlsx', '.xlsm', '.xlsb', '.xls', '.xlt', '.xltx', '.xltm'];
+  var isExcel = excelExts.some(function (ext) { return name.endsWith(ext); });
+
   if (name.endsWith('.json')) {
     parseJSONFile(file);
-  } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+  } else if (isExcel) {
     parseExcelFile(file);
   } else {
     _showError(
       _t('unsupportedFile') ||
-      'Unsupported file type. Please use an .xlsx (Excel) or .json file.'
+      'Unsupported file type. Please use an Excel file (.xlsx, .xlsm, etc.) or .json file.'
     );
   }
 }
@@ -155,6 +158,26 @@ function _validateJSONStructure(data) {
    EXCEL PARSER
    ========================================================================== */
 
+/* Scan first 20 rows of a sheet (array-of-arrays) looking for a cell whose
+   trimmed value equals "Name" (case-insensitive). Returns the value of the
+   first non-empty cell to the right of that label, or '' if not found.
+   Works regardless of which row or column the Name label appears in. */
+function _scanSheetForName(rows) {
+  for (var r = 0; r < Math.min(rows.length, 20); r++) {
+    var row = rows[r];
+    for (var c = 0; c < row.length; c++) {
+      if (String(row[c] || '').trim().toLowerCase() === 'name') {
+        /* Look for the first non-empty cell to the right */
+        for (var nc = c + 1; nc < row.length; nc++) {
+          var val = String(row[nc] || '').trim();
+          if (val) return val;
+        }
+      }
+    }
+  }
+  return '';
+}
+
 function parseExcelFile(file) {
   if (typeof XLSX === 'undefined') {
     _showError('SheetJS library is not loaded. Cannot read Excel files.');
@@ -192,11 +215,11 @@ function parseExcelFile(file) {
     var expRows  = XLSX.utils.sheet_to_json(expSheet,  { header: 1, defval: '' });
     var fuelRows = XLSX.utils.sheet_to_json(fuelSheet, { header: 1, defval: '' });
 
-    /* ---- Extract team member info from header rows ---- */
-    /* Row 2 (index 2): [ 'Name:', name, ..., 'New', ..., 'Total:', total ] */
-    var nameRow  = expRows[2] || [];
-    var memberName     = String(nameRow[1] || '').trim();
-    var expenseTotal   = parseFloat(nameRow[6]) || 0;
+    /* ---- Extract team member info ---- */
+    /* Scan header rows for a cell containing "Name" and take the next non-empty cell in the same row.
+       The position varies per template — this handles any row/column location. */
+    var memberName   = _scanSheetForName(expRows);
+    var expenseTotal = parseFloat((expRows[2] || [])[6]) || 0;
 
     /* Row 1 (index 1): [ 'Account:', accountType, ..., 'VF' ] */
     var accountRow  = expRows[1] || [];
@@ -204,6 +227,8 @@ function parseExcelFile(file) {
 
     /* Tracking number: pulled from first data row col 12, or footer */
     var trackingNumber = 0;
+
+    var _VALID_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     /* ---- Parse expense data rows (start at index 5) ---- */
     var expenses = [];
@@ -218,6 +243,9 @@ function parseExcelFile(file) {
       var month = String(r[2] || '').trim();
       var siteId = String(r[5] || '').trim();
       if (!month && !siteId) continue;
+
+      /* Skip header / template rows — month must be a real month abbreviation */
+      if (!month || _VALID_MONTHS.indexOf(month) === -1) continue;
 
       var dayVal = r[3];
       var day = (dayVal !== '' && dayVal !== null && dayVal !== undefined)
@@ -250,9 +278,8 @@ function parseExcelFile(file) {
     }
 
     /* ---- Parse fuel data rows (start at index 5) ---- */
-    /* Row 2 col 1: name again; mobile not stored in Excel */
-    var fuelNameRow  = fuelRows[2] || [];
-    if (!memberName) memberName = String(fuelNameRow[1] || '').trim();
+    /* Try fuel sheet if expense sheet didn't yield a name */
+    if (!memberName) memberName = _scanSheetForName(fuelRows);
 
     var fuel = [];
     for (var j = 5; j < fuelRows.length; j++) {
@@ -264,6 +291,9 @@ function parseExcelFile(file) {
       var monthF  = String(rf[2] || '').trim();
       var siteIdF = String(rf[5] || '').trim();
       if (!monthF && !siteIdF) continue;
+
+      /* Skip header / template rows */
+      if (!monthF || _VALID_MONTHS.indexOf(monthF) === -1) continue;
 
       var dayFVal = rf[3];
       var dayF = (dayFVal !== '' && dayFVal !== null && dayFVal !== undefined)
@@ -449,6 +479,18 @@ function showPreview(data, sourceType, file) {
   _hideSection('dropZoneSection');
   _hideSection('errorSection');
 
+  /* ---- Update expense loaded state strip ---- */
+  var expCount  = (data.expenses || []).length;
+  var fuelCount = (data.fuel     || []).length;
+  var sizeStr   = file ? ((file.size / 1024).toFixed(1) + ' KB') : '';
+  _setText('expLoadedFilename', file ? file.name : (data.filename || '—'));
+  _setText('expLoadedMeta',
+    expCount + ' expense' + (expCount !== 1 ? 's' : '') +
+    ' · ' + fuelCount + ' fuel entr' + (fuelCount !== 1 ? 'ies' : 'y') +
+    (sizeStr ? ' · ' + sizeStr : '')
+  );
+  _showSection('expenseLoadedState');
+
   /* ---- Wire Confirm button ---- */
   var btnConfirm = document.getElementById('btnConfirmImport');
   if (btnConfirm) {
@@ -520,6 +562,15 @@ document.addEventListener('DOMContentLoaded', function () {
     btnRetry.addEventListener('click', _resetToDropZone);
   }
 
+  /* Replace expense file button → reset to drop zone then open picker */
+  var btnReplaceExpense = document.getElementById('btnReplaceExpense');
+  if (btnReplaceExpense && fileInput) {
+    btnReplaceExpense.addEventListener('click', function () {
+      _resetToDropZone();
+      fileInput.click();
+    });
+  }
+
   /* Cancel button inside preview */
   var btnCancel = document.getElementById('btnCancelImport');
   if (btnCancel) {
@@ -557,6 +608,7 @@ function _resetToDropZone() {
   _pendingSourceType = null;
 
   _showSection('dropZoneSection');
+  _hideSection('expenseLoadedState');
   _hideSection('errorSection');
   _hideSection('previewSection');
 
