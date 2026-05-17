@@ -413,7 +413,7 @@ function _addApprovalFooterXLSX(ws, settings, startRow, n) {
   function bdr() { var s = _bs(_XL_NAVY,'thin'); return {top:s,bottom:s,left:s,right:s}; }
 
   var fr1 = ws.getRow(startRow); fr1.height = 22;
-  [{c:4,v:'إعتماد'},{c:6,v:'مدير الحسابات'},{c:8,v:'المدير المسؤل'},{c:n,v:'Tracking #'}]
+  [{c:1,v:'إعتماد'},{c:3,v:'مدير الحسابات'},{c:5,v:'المدير المسؤل'},{c:n,v:'Tracking #'}]
     .forEach(function(x) {
       _xCell(fr1.getCell(x.c), x.v, { font:{bold:true,size:10}, align:{horizontal:'center',vertical:'middle'}, border:bdr() });
     });
@@ -422,41 +422,42 @@ function _addApprovalFooterXLSX(ws, settings, startRow, n) {
   _xCell(fr2.getCell(n), tracking, { font:{bold:true,size:11}, align:{horizontal:'center',vertical:'middle'}, border:bdr() });
 
   var fr3 = ws.getRow(startRow + 2); fr3.height = 18;
-  fr3.getCell(4).value = dateStr;
-  fr3.getCell(5).value = 'التاريخ:';
+  fr3.getCell(1).value = dateStr;
+  fr3.getCell(2).value = 'التاريخ:';
 }
 
 /* --- Shared row-builder for logo/title/account rows (both sheets) --- */
 function _addHeaderRows(ws, n, title, settings, logoId) {
-  var mid = 3 + Math.ceil((n - 3) / 2);
+  var mid = Math.ceil(n / 2);
 
-  /* Row 1: A-C white (logo), D-n green title */
+  /* Row 1: all green title */
   var r1 = ws.getRow(1); r1.height = 44;
   for (var c = 1; c <= n; c++) {
     _xCell(r1.getCell(c), undefined, {
-      fill:  c <= 3 ? _XL_WHITE : _XL_GREEN,
-      font:  c >  3 ? {bold:true,color:{argb:_XL_WHITE},size:14} : undefined,
-      align: c >  3 ? {horizontal:'center',vertical:'middle'} : undefined,
+      fill:  _XL_GREEN,
+      font:  {bold:true,color:{argb:_XL_WHITE},size:14},
+      align: {horizontal:'center',vertical:'middle'},
     });
   }
-  r1.getCell(4).value = title;
-  ws.mergeCells(1, 4, 1, n);
+  r1.getCell(1).value = title;
+  ws.mergeCells(1, 1, 1, n);
 
-  /* Row 2: A-C logo (merged with row 1), D-mid LBLUE Account, mid+1-n WHITE value */
+  /* Row 2: left half LBLUE Account label, right half white value */
   var r2 = ws.getRow(2); r2.height = 20;
   for (var c = 1; c <= n; c++) {
-    var isLbl = c > 3 && c <= mid, isVal = c > mid;
+    var isLbl = c <= mid, isVal = c > mid;
     _xCell(r2.getCell(c), undefined, {
-      fill:  c <= 3 ? _XL_WHITE : isLbl ? _XL_LBLUE : _XL_WHITE,
-      font:  isLbl ? {bold:true,color:{argb:_XL_NAVY},size:11} : isVal ? {color:{argb:_XL_NAVY},size:11} : undefined,
-      align: (isLbl||isVal) ? {horizontal:'center',vertical:'middle'} : undefined,
+      fill:  isLbl ? _XL_LBLUE : _XL_WHITE,
+      font:  isLbl ? {bold:true,color:{argb:_XL_NAVY},size:11} : {color:{argb:_XL_NAVY},size:11},
+      align: {horizontal:'center',vertical:'middle'},
     });
   }
-  r2.getCell(4).value = 'Account';
+  r2.getCell(1).value = 'Account';
   r2.getCell(mid + 1).value = settings.accountType || 'New';
-  ws.mergeCells(2, 4, 2, mid);
+  ws.mergeCells(2, 1, 2, mid);
   ws.mergeCells(2, mid + 1, 2, n);
-  ws.mergeCells(1, 1, 2, 3);
+
+  /* Logo overlays top-left of header rows (floats over cells) */
   if (logoId !== null && logoId !== undefined) {
     ws.addImage(logoId, { tl:{col:0,row:0}, br:{col:3,row:2} });
   }
@@ -470,7 +471,6 @@ function _addColHeaders(ws, rowNum, n, headers) {
   var row = ws.getRow(rowNum); row.height = 28;
   headers.forEach(function(h, i) {
     var c = i + 1;
-    if (c <= 3) return;
     _xCell(row.getCell(c), h, {
       fill:   _XL_NAVY,
       font:   {bold:true,color:{argb:_XL_WHITE},size:10},
@@ -478,12 +478,12 @@ function _addColHeaders(ws, rowNum, n, headers) {
       border: {
         top:    _bs(_XL_NAVY,'medium'),
         bottom: _bs(_XL_NAVY,'thin'),
-        left:   c===4 ? _bs(_XL_NAVY,'medium') : _bs(_XL_WHITE,'thin'),
+        left:   c===1 ? _bs(_XL_NAVY,'medium') : _bs(_XL_WHITE,'thin'),
         right:  c===n ? _bs(_XL_NAVY,'medium') : _bs(_XL_WHITE,'thin'),
       },
     });
   });
-  ws.autoFilter = { from:{row:rowNum,column:4}, to:{row:rowNum,column:n} };
+  ws.autoFilter = { from:{row:rowNum,column:1}, to:{row:rowNum,column:n} };
 }
 
 /* --- Shared data-row builder --- */
@@ -495,7 +495,6 @@ function _addDataRows(ws, dataStart, n, rows) {
     var fillC  = isAlt ? _XL_LGRAY : _XL_WHITE;
     vals.forEach(function(v, i) {
       var c = i + 1;
-      if (c <= 3) return;
       var cell = row.getCell(c);
       var isNum = typeof v === 'number';
       _xCell(cell, v, {
@@ -505,7 +504,7 @@ function _addDataRows(ws, dataStart, n, rows) {
         border: {
           top:    isAlt  ? _bs(_XL_LGRAY,'thin') : _bs(_XL_WHITE,'thin'),
           bottom: isLast ? _bs(_XL_NAVY,'medium') : _bs(_XL_LGRAY,'thin'),
-          left:   c===4  ? _bs(_XL_NAVY,'medium') : _bs(_XL_LGRAY,'thin'),
+          left:   c===1  ? _bs(_XL_NAVY,'medium') : _bs(_XL_LGRAY,'thin'),
           right:  c===n  ? _bs(_XL_NAVY,'medium') : _bs(_XL_LGRAY,'thin'),
         },
       });
@@ -514,13 +513,12 @@ function _addDataRows(ws, dataStart, n, rows) {
 }
 
 /* -----------------------------------------------------------------------
-   Expense sheet  (n=13, A-M)
+   Expense sheet  (n=10, A-J)
    ----------------------------------------------------------------------- */
 function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId) {
-  var n  = 13;
+  var n  = 10;
   var ws = wb.addWorksheet('Expenses Tracking');
   ws.columns = [
-    {width:7},{width:5},{width:5},
     {width:8},{width:6},{width:14},{width:16},{width:14},
     {width:18},{width:32},{width:12},{width:24},{width:18}
   ];
@@ -531,24 +529,24 @@ function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId) {
   var expTotal = expenses.reduce(function(s,e){return s+(parseFloat(e.amount)||0);},0);
   var r4 = ws.getRow(4); r4.height = 22;
   function dgBdr(){ var s=_bs(_XL_DGRAY); return {top:s,bottom:s,left:s,right:s}; }
-  _xCell(r4.getCell(4),  'Name',  {font:{bold:true,color:{argb:_XL_NAVY},size:10}, border:dgBdr(), align:{horizontal:'center',vertical:'middle'}});
-  _xCell(r4.getCell(5),  settings.name||'', {font:{color:{argb:_XL_DGRAY},size:10}, border:dgBdr(), align:{horizontal:'left',vertical:'middle'}});
-  ws.mergeCells(4,5,4,9);
-  _xCell(r4.getCell(11), 'Total', {font:{bold:true,color:{argb:_XL_NAVY},size:10}, border:dgBdr(), align:{horizontal:'center',vertical:'middle'}});
-  _xCell(r4.getCell(12), 'EGP '+Math.round(expTotal).toLocaleString(), {font:{color:{argb:_XL_DGRAY},size:10}, border:dgBdr(), align:{horizontal:'center',vertical:'middle'}});
-  ws.mergeCells(4,12,4,13);
+  _xCell(r4.getCell(1),  'Name',  {font:{bold:true,color:{argb:_XL_NAVY},size:10}, border:dgBdr(), align:{horizontal:'center',vertical:'middle'}});
+  _xCell(r4.getCell(2),  settings.name||'', {font:{color:{argb:_XL_DGRAY},size:10}, border:dgBdr(), align:{horizontal:'left',vertical:'middle'}});
+  ws.mergeCells(4,2,4,6);
+  _xCell(r4.getCell(8), 'Total', {font:{bold:true,color:{argb:_XL_NAVY},size:10}, border:dgBdr(), align:{horizontal:'center',vertical:'middle'}});
+  _xCell(r4.getCell(9), 'EGP '+Math.round(expTotal).toLocaleString(), {font:{color:{argb:_XL_DGRAY},size:10}, border:dgBdr(), align:{horizontal:'center',vertical:'middle'}});
+  ws.mergeCells(4,9,4,10);
 
   _navySep(ws, 5, n);
 
-  _addColHeaders(ws, 6, n, ['','','','Month','Day','Project name','Site ID','Job Code','Category','Item Description','Amount','Comment','Coordinator']);
+  _addColHeaders(ws, 6, n, ['Month','Day','Project name','Site ID','Job Code','Category','Item Description','Amount','Comment','Coordinator']);
 
   var dataRows = expenses.map(function(e) {
-    return ['','','', e.month||'', e.day||'', e.projectName||'', e.siteId||'', e.jobCode||'',
+    return [e.month||'', e.day||'', e.projectName||'', e.siteId||'', e.jobCode||'',
             e.category||'', e.itemDescription||'', parseFloat(e.amount)||0, e.comment||'', e.coordinator||''];
   });
   _addDataRows(ws, 7, n, dataRows);
   /* Amount numFmt */
-  expenses.forEach(function(_,ri){ ws.getRow(7+ri).getCell(11).numFmt = '#,##0.00'; });
+  expenses.forEach(function(_,ri){ ws.getRow(7+ri).getCell(8).numFmt = '#,##0.00'; });
 
   var afterData = 7 + expenses.length;
   ws.getRow(afterData).height = 8;
@@ -556,15 +554,14 @@ function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId) {
 }
 
 /* -----------------------------------------------------------------------
-   Fuel sheet  (n=16, A-P)
+   Fuel sheet  (n=13, A-M)
    ----------------------------------------------------------------------- */
 function _buildCoordFuelSheetXLSX(wb, settings, fuel, logoId) {
-  var n  = 16;
+  var n  = 13;
   var ws = wb.addWorksheet('Fuel Tracking');
   ws.columns = [
-    {width:7},{width:5},{width:5},
     {width:8},{width:6},{width:14},{width:16},{width:14},
-    {width:12},{width:12},{width:12},{width:12},{width:16},{width:12},{width:12},{width:18}
+    {width:12},{width:12},{width:12},{width:12},{width:16},{width:14},{width:12},{width:18}
   ];
 
   _addHeaderRows(ws, n, 'Fuel Tracking', settings, logoId);
@@ -576,28 +573,28 @@ function _buildCoordFuelSheetXLSX(wb, settings, fuel, logoId) {
   function dgBdr(){ var s=_bs(_XL_DGRAY); return {top:s,bottom:s,left:s,right:s}; }
   function lbl(c,v){ _xCell(r4.getCell(c),v,{font:{bold:true,color:{argb:_XL_NAVY},size:10},border:dgBdr(),align:{horizontal:'center',vertical:'middle'}}); }
   function val(c,v){ _xCell(r4.getCell(c),v,{font:{color:{argb:_XL_DGRAY},size:10},border:dgBdr(),align:{horizontal:'center',vertical:'middle'}}); }
-  lbl(4,'Name');
-  val(5, settings.name||'');  ws.mergeCells(4,5,4,6);
-  lbl(7,'Total');
-  val(8,'EGP '+Math.round(fuelTotal+kartaTotal).toLocaleString());  ws.mergeCells(4,8,4,9);
-  lbl(10,'Fuel');
-  val(11,'EGP '+Math.round(fuelTotal).toLocaleString());
-  lbl(12,'Karta');
-  val(13,'EGP '+Math.round(kartaTotal).toLocaleString());            ws.mergeCells(4,13,4,16);
+  lbl(1,'Name');
+  val(2, settings.name||'');  ws.mergeCells(4,2,4,3);
+  lbl(4,'Total');
+  val(5,'EGP '+Math.round(fuelTotal+kartaTotal).toLocaleString());  ws.mergeCells(4,5,4,6);
+  lbl(7,'Fuel');
+  val(8,'EGP '+Math.round(fuelTotal).toLocaleString());
+  lbl(9,'Karta');
+  val(10,'EGP '+Math.round(kartaTotal).toLocaleString());            ws.mergeCells(4,10,4,13);
 
   _navySep(ws, 5, n);
 
-  _addColHeaders(ws, 6, n, ['','','','Month','Day','Project name','Site ID','Job Code',
+  _addColHeaders(ws, 6, n, ['Month','Day','Project name','Site ID','Job Code',
     'Start KM','End KM','Fuel Amount','Area','Driver','City','Karta Amount','Coordinator']);
 
   var dataRows = fuel.map(function(f) {
-    return ['','','', f.month||'', f.day||'', f.projectName||'', f.siteId||'', f.jobCode||'',
+    return [f.month||'', f.day||'', f.projectName||'', f.siteId||'', f.jobCode||'',
             parseFloat(f.startKm)||0, parseFloat(f.endKm)||0, parseFloat(f.fuelAmount)||0,
             f.area||'', f.driver||'', f.city||'', parseFloat(f.kartaAmount)||0, f.coordinator||''];
   });
   _addDataRows(ws, 7, n, dataRows);
   /* Fuel + Karta numFmt */
-  fuel.forEach(function(_,ri){ ws.getRow(7+ri).getCell(11).numFmt='#,##0.00'; ws.getRow(7+ri).getCell(15).numFmt='#,##0.00'; });
+  fuel.forEach(function(_,ri){ ws.getRow(7+ri).getCell(8).numFmt='#,##0.00'; ws.getRow(7+ri).getCell(12).numFmt='#,##0.00'; });
 
   var afterData = 7 + fuel.length;
   ws.getRow(afterData).height = 8;
