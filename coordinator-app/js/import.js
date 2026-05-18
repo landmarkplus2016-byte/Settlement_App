@@ -100,13 +100,20 @@ function handleFile(file) {
 function parseJSONFile(file) {
   var reader = new FileReader();
 
+  reader.onloadstart = function () { _expProgress(0, 'Reading file…'); };
+  reader.onprogress  = function (evt) {
+    if (evt.lengthComputable) _expProgress(Math.round(evt.loaded / evt.total * 100), 'Reading file…');
+  };
+
   reader.onload = function (e) {
+    _expProgress(100, 'Parsing…', true);
     var text = e.target.result;
     var data;
 
     try {
       data = JSON.parse(text);
     } catch (err) {
+      _expProgressHide();
       _showError((_t('jsonParseError') || 'Invalid JSON file.') + ' (' + err.message + ')');
       return;
     }
@@ -114,6 +121,7 @@ function parseJSONFile(file) {
     /* Validate required structure */
     var problems = _validateJSONStructure(data);
     if (problems.length > 0) {
+      _expProgressHide();
       _showError(
         (_t('invalidFormat') || 'File format not recognised.') +
         '\n' + problems.join(' ')
@@ -121,10 +129,12 @@ function parseJSONFile(file) {
       return;
     }
 
+    _expProgressHide();
     showPreview(data, 'json', file);
   };
 
   reader.onerror = function () {
+    _expProgressHide();
     _showError(_t('fileReadError') || 'Could not read the file.');
   };
 
@@ -186,13 +196,20 @@ function parseExcelFile(file) {
 
   var reader = new FileReader();
 
+  reader.onloadstart = function () { _expProgress(0, 'Reading file…'); };
+  reader.onprogress  = function (evt) {
+    if (evt.lengthComputable) _expProgress(Math.round(evt.loaded / evt.total * 100), 'Reading file…');
+  };
+
   reader.onload = function (e) {
+    _expProgress(100, 'Parsing…', true);
     var arrayBuffer = e.target.result;
 
     var wb;
     try {
       wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
     } catch (err) {
+      _expProgressHide();
       _showError((_t('excelParseError') || 'Could not open Excel file.') + ' (' + err.message + ')');
       return;
     }
@@ -200,6 +217,7 @@ function parseExcelFile(file) {
     /* ---- Expenses sheet ---- */
     var expSheet = wb.Sheets['Expenses Tracking'];
     if (!expSheet) {
+      _expProgressHide();
       _showError(_t('missingExpenseSheet') || 'Sheet "Expenses Tracking" not found in this workbook.');
       return;
     }
@@ -207,6 +225,7 @@ function parseExcelFile(file) {
     /* ---- Fuel sheet ---- */
     var fuelSheet = wb.Sheets['Fuel Tracking'];
     if (!fuelSheet) {
+      _expProgressHide();
       _showError(_t('missingFuelSheet') || 'Sheet "Fuel Tracking" not found in this workbook.');
       return;
     }
@@ -353,10 +372,12 @@ function parseExcelFile(file) {
       },
     };
 
+    _expProgressHide();
     showPreview(data, 'xlsx', file);
   };
 
   reader.onerror = function () {
+    _expProgressHide();
     _showError(_t('fileReadError') || 'Could not read the file.');
   };
 
@@ -638,6 +659,26 @@ function _t(key) {
   var lang = localStorage.getItem('lang') || DEFAULT_LANG;
   var t    = TRANSLATIONS[lang] || TRANSLATIONS[DEFAULT_LANG];
   return t[key] || '';
+}
+
+/* ---- Upload progress bar helpers ---- */
+function _expProgress(pct, label, done) {
+  var wrap  = document.getElementById('expenseProgressWrap');
+  var fill  = document.getElementById('expenseProgressFill');
+  var pctEl = document.getElementById('expenseProgressPct');
+  var lblEl = document.getElementById('expenseProgressLabel');
+  if (!wrap) return;
+  wrap.classList.remove('hidden');
+  if (fill)  { fill.style.width = pct + '%'; fill.classList.toggle('complete', !!done); }
+  if (pctEl) pctEl.textContent  = pct + '%';
+  if (lblEl) lblEl.textContent  = label || 'Reading…';
+}
+
+function _expProgressHide() {
+  var wrap = document.getElementById('expenseProgressWrap');
+  if (wrap) wrap.classList.add('hidden');
+  var fill = document.getElementById('expenseProgressFill');
+  if (fill) { fill.style.width = '0%'; fill.classList.remove('complete'); }
 }
 
 /* Derive report month from first entry in expenses or fuel arrays */

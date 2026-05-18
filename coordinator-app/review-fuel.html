@@ -142,7 +142,24 @@
     }
     .status-select.status-approved { color: var(--color-success); border-color: #a7f3d0; background: var(--color-success-bg); }
     .status-select.status-flagged  { color: var(--color-danger);  border-color: #fecaca; background: var(--color-danger-bg);  }
+    .status-select.status-warning  { color: var(--color-warning); border-color: #fde68a; background: var(--color-warning-bg); }
     .status-select.status-pending  { color: var(--color-text-secondary); }
+
+    /* Site-not-found warning row */
+    .row-status-warning { background: #fffbeb !important; }
+    .row-status-warning td { border-bottom-color: #fde68a; }
+    .row-status-warning td:first-child { border-left: 3px solid var(--color-warning); }
+    [dir="rtl"] .row-status-warning td:first-child { border-left: none; }
+    [dir="rtl"] .row-status-warning td:last-child  { border-right: 3px solid var(--color-warning); }
+
+    /* Site warning badge on row number cell */
+    .site-warn-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--color-warning); color: #fff;
+      font-size: 9px; font-weight: 700; margin-left: 4px;
+      vertical-align: middle; cursor: default;
+    }
 
     /* Note input */
     .note-input {
@@ -291,7 +308,8 @@
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </a>
-      <span class="coord-navbar-title">ExpenseFuel — Coordinator</span>
+      <img src="LMP Big Logo-Photoroom.png" class="coord-navbar-logo" alt="Landmark Plus" />
+      <span class="coord-navbar-title">Expense-Fuel Settlement Checker</span>
       <span class="coord-role-chip">Coordinator</span>
     </div>
 
@@ -364,6 +382,9 @@
         </a>
       </div>
 
+      <!-- Warnings card — site existence check, rendered by review.js -->
+      <div id="warningsCard" class="hidden" style="margin-bottom:var(--sp-3)"></div>
+
       <!-- Review toolbar -->
       <div class="review-toolbar" id="reviewToolbar" role="toolbar" aria-label="Review actions">
         <div class="review-toolbar-left">
@@ -434,6 +455,7 @@
                 <th data-i18n="driver">Driver</th>
                 <th>City</th>
                 <th>Coordinator</th>
+                <th style="min-width:72px">Old/New</th>
                 <th style="min-width:120px">Approval STS</th>
               </tr>
             </thead>

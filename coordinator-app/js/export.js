@@ -64,7 +64,8 @@ function initExportPage() {
 
   /* ---- 5. Pre-display planned filename ---- */
   var filenameEl = document.getElementById('plannedFilename');
-  if (filenameEl) filenameEl.textContent = 'File: ' + buildCoordFilename();
+  if (filenameEl) filenameEl.textContent =
+    'Files: ' + buildCoordFilename('New') + '  +  ' + buildCoordFilename('Old');
 
   /* ---- 6. Build checklist and summary ---- */
   buildChecklist();
@@ -255,7 +256,7 @@ function buildExportSummary() {
    FILENAME
    ========================================================================== */
 
-function buildCoordFilename() {
+function buildCoordFilename(label) {
   var member   = importData ? (importData.teamMember || {}) : {};
   var fullName = (member.name || 'Unknown').trim();
   var safeName = fullName.replace(/\s+/g, '_');
@@ -265,12 +266,11 @@ function buildCoordFilename() {
     importData ? (importData.fuel     || []) : []
   );
 
-  if (!allDates.length) return safeName + '-from-unknown.xlsx';
+  var base = allDates.length
+    ? safeName + '-from' + _formatDateFilename(allDates[0]) + '-' + _formatDateFilename(allDates[allDates.length - 1])
+    : safeName + '-from-unknown';
 
-  var startStr = _formatDateFilename(allDates[0]);
-  var endStr   = _formatDateFilename(allDates[allDates.length - 1]);
-
-  return safeName + '-from' + startStr + '-' + endStr + '.xlsx';
+  return base + (label ? '-' + label : '') + '.xlsx';
 }
 
 
@@ -283,14 +283,29 @@ async function triggerFinalExport() {
   if (btn) btn.disabled = true;
 
   try {
-    var wb       = await generateCoordinatorExcel(importData, reviewData);
-    var filename = buildCoordFilename();
+    var result = await generateCoordinatorExcel(importData, reviewData);
 
-    /* ExcelJS: write to buffer then trigger download via FileSaver */
-    var buf = await wb.xlsx.writeBuffer();
-    saveAs(new Blob([buf], { type: 'application/octet-stream' }), filename);
+    /* Download each workbook that was generated */
+    var downloads = [];
+    if (result.new) downloads.push({ wb: result.new, label: 'New' });
+    if (result.old) downloads.push({ wb: result.old, label: 'Old' });
 
-    _setText('exportedFilenameText', filename);
+    /* Fallback: if neither (all rejected?) still produce a single file */
+    if (!downloads.length) {
+      showToast('No approved entries to export', 'warning');
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    var filenames = [];
+    for (var i = 0; i < downloads.length; i++) {
+      var filename = buildCoordFilename(downloads[i].label);
+      var buf = await downloads[i].wb.xlsx.writeBuffer();
+      saveAs(new Blob([buf], { type: 'application/octet-stream' }), filename);
+      filenames.push(filename);
+    }
+
+    _setText('exportedFilenameText', filenames.join('  +  '));
 
     var exportSection  = document.getElementById('exportBtnSection');
     var successSection = document.getElementById('successSection');
@@ -299,7 +314,7 @@ async function triggerFinalExport() {
 
     var lang = localStorage.getItem('lang') || DEFAULT_LANG;
     var t    = TRANSLATIONS[lang] || TRANSLATIONS[DEFAULT_LANG];
-    showToast(t.exportSuccess || 'Exported successfully', 'success');
+    showToast((t.exportSuccess || 'Exported successfully') + ' — ' + filenames.length + ' file(s)', 'success');
 
   } catch (err) {
     if (btn) btn.disabled = false;

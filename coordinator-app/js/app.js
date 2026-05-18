@@ -11,6 +11,12 @@
      js/[page-specific].js       ← last
    ========================================================================== */
 
+/* Apply saved theme immediately — before DOMContentLoaded to avoid colour flash */
+(function () {
+  var t = localStorage.getItem('coord_theme');
+  if (t && t !== 'default') document.documentElement.setAttribute('data-coord-theme', t);
+}());
+
 document.addEventListener('DOMContentLoaded', function () {
 
   /* ---- 1. Language init ------------------------------------------------- */
@@ -25,6 +31,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ---- 4. Language toggle pill click handlers --------------------------- */
   _bindLangToggle();
+
+  /* ---- 5. Theme picker -------------------------------------------------- */
+  _injectThemePicker();
+  _markActiveThemeSwatch();
+  _bindThemePicker();
 
 });
 
@@ -65,7 +76,7 @@ function _setActiveNavTab() {
    -------------------------------------------------------------------------- */
 function _applySettingsState() {
   var settings = getCoordSettings();
-  var complete  = !!(settings && settings.name && settings.mobile);
+  var complete  = !!(settings && settings.name);
 
   var banner = document.querySelector('.warning-banner');
   if (banner) {
@@ -113,6 +124,99 @@ function _bindLangToggle() {
 
 function refreshSettingsState() {
   _applySettingsState();
+}
+
+/* ==========================================================================
+   THEME PICKER
+   ========================================================================== */
+
+var _THEMES = [
+  { id: 'default', color: '#065f46', label: 'Green'  },
+  { id: 'navy',    color: '#1e3a5f', label: 'Navy'   },
+  { id: 'ocean',   color: '#0369a1', label: 'Ocean'  },
+  { id: 'slate',   color: '#334155', label: 'Slate'  },
+  { id: 'rose',    color: '#9f1239', label: 'Rose'   },
+  { id: 'amber',   color: '#92400e', label: 'Amber'  },
+];
+
+/* Inject the picker HTML before the lang-toggle in the navbar */
+function _injectThemePicker() {
+  var langToggle = document.querySelector('.navbar .lang-toggle');
+  if (!langToggle || document.getElementById('themePicker')) return;
+
+  var swatches = _THEMES.map(function (t) {
+    return '<button class="theme-swatch" data-theme="' + t.id + '" ' +
+           'style="background:' + t.color + '" ' +
+           'title="' + t.label + '" aria-label="' + t.label + ' theme"></button>';
+  }).join('');
+
+  var wrap = document.createElement('div');
+  wrap.className = 'theme-picker';
+  wrap.id        = 'themePicker';
+  wrap.innerHTML =
+    '<button class="theme-picker-btn" id="themePickerBtn" ' +
+    '        aria-label="Change colour theme" title="Colour theme">' +
+    '  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    '       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '    <circle cx="13.5" cy="6.5"  r=".5" fill="currentColor"/>' +
+    '    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>' +
+    '    <circle cx="8.5"  cy="7.5"  r=".5" fill="currentColor"/>' +
+    '    <circle cx="6.5"  cy="12.5" r=".5" fill="currentColor"/>' +
+    '    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688' +
+    '     0-.437-.18-.835-.476-1.124-.29-.289-.469-.684-.469-1.116' +
+    '     a1.64 1.64 0 0 1 1.648-1.648h1.93c3.082 0 5.568-2.487 5.568-5.568' +
+    '     C21.815 6.006 17.41 2 12 2z"/>' +
+    '  </svg>' +
+    '</button>' +
+    '<div class="theme-panel hidden" id="themePanel" role="menu" ' +
+    '     aria-label="Colour themes">' +
+    swatches +
+    '</div>';
+
+  langToggle.parentNode.insertBefore(wrap, langToggle);
+}
+
+/* Set & persist a theme */
+function _setTheme(name) {
+  if (name && name !== 'default') {
+    document.documentElement.setAttribute('data-coord-theme', name);
+  } else {
+    document.documentElement.removeAttribute('data-coord-theme');
+  }
+  localStorage.setItem('coord_theme', name || 'default');
+  _markActiveThemeSwatch();
+}
+
+/* Ring the active swatch */
+function _markActiveThemeSwatch() {
+  var current = localStorage.getItem('coord_theme') || 'default';
+  document.querySelectorAll('.theme-swatch').forEach(function (sw) {
+    sw.classList.toggle('active', sw.dataset.theme === current);
+  });
+}
+
+/* Wire button + swatches + outside-click close */
+function _bindThemePicker() {
+  var btn   = document.getElementById('themePickerBtn');
+  var panel = document.getElementById('themePanel');
+  if (!btn || !panel) return;
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    panel.classList.toggle('hidden');
+  });
+
+  document.querySelectorAll('.theme-swatch').forEach(function (sw) {
+    sw.addEventListener('click', function () {
+      _setTheme(sw.dataset.theme);
+      panel.classList.add('hidden');
+    });
+  });
+
+  document.addEventListener('click', function () {
+    if (panel) panel.classList.add('hidden');
+  });
+  panel.addEventListener('click', function (e) { e.stopPropagation(); });
 }
 
 /* ==========================================================================

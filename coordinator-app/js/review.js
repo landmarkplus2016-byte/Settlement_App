@@ -29,8 +29,11 @@ var reviewData = {};   /* { [entryId]: { status, coordinatorNote } } */
 var entryType  = null; /* 'expenses' | 'fuel' */
 
 /* Private tracking sets populated during validation */
-var _errorEntryIds = {}; /* entries with per-field validation failures */
-var _kmMismatchIds = {}; /* fuel entries with KM continuity gaps */
+var _errorEntryIds   = {}; /* entries with per-field validation failures */
+var _kmMismatchIds   = {}; /* fuel entries with KM continuity gaps */
+var _siteNotFoundIds = {}; /* entries whose site ID is absent from coord tracking */
+var _userReviewed    = {}; /* entries that already had saved coordinator decisions */
+var _settlementPeriod = null; /* { month:0-11, year } derived once from import dates */
 
 /* ==========================================================================
    INIT
@@ -60,10 +63,12 @@ function initReviewPage() {
     ? (importData.fuel     || [])
     : (importData.expenses || []);
 
+  _userReviewed = {};
   entries.forEach(function (e) {
     reviewData[e.id] = saved[e.id]
       ? { status: _normalizeStatus(saved[e.id].status), coordinatorNote: saved[e.id].coordinatorNote || '' }
       : { status: 'approved', coordinatorNote: '' };
+    if (saved[e.id]) _userReviewed[e.id] = true;
   });
 
   /* ---- 5. Show content ---- */
@@ -102,12 +107,19 @@ function initReviewPage() {
 
   _autoFlagIssues(validationResult);
 
+  /* ---- 7b. Site existence check + Old/New setup ---- */
+  _settlementPeriod = _computeSettlementPeriod();
+  _checkSiteExistence();
+  _applyWarningStatus();
+
   /* ---- 8. Render table ---- */
   if (entryType === 'expenses') {
     renderExpenseReview(importData.expenses || []);
   } else {
     renderFuelReview(importData.fuel || []);
   }
+
+  _renderWarningsCard();
 
   /* ---- 9. Initial progress display ---- */
   updateProgressDisplay();
@@ -303,18 +315,24 @@ function renderExpenseReview(expenses) {
   if (tbody) tbody.innerHTML = '';
 
   expenses.forEach(function (e, i) {
-    var state  = reviewData[e.id] || { status: 'pending', coordinatorNote: '' };
-    var hasErr = !!_errorEntryIds[e.id];
+    var state       = reviewData[e.id] || { status: 'pending', coordinatorNote: '' };
+    var hasErr      = !!_errorEntryIds[e.id];
+    var hasSiteWarn = !!_siteNotFoundIds[e.id];
 
     var tr = document.createElement('tr');
     tr.dataset.entryId = e.id;
     _applyRowClass(tr, state.status);
     if (hasErr) tr.classList.add('has-issues');
 
-    /* # */
+    /* # — with optional site-not-found badge */
     var tdNum = document.createElement('td');
-    tdNum.className  = 'row-num';
-    tdNum.textContent = String(i + 1);
+    tdNum.className = 'row-num';
+    if (hasSiteWarn) {
+      tdNum.innerHTML = _esc(String(i + 1)) +
+        '<span class="site-warn-icon" title="Site not in coordinator sheet" aria-label="Site not found">!</span>';
+    } else {
+      tdNum.textContent = String(i + 1);
+    }
     tr.appendChild(tdNum);
 
     /* Date */        tr.appendChild(_editTd(e.id, 'date',            e.date          || '', { ltr: true,  placeholder: 'DD-Mon-YYYY' }));
@@ -327,6 +345,8 @@ function renderExpenseReview(expenses) {
 
     /* Comment from the original sheet — editable */
     tr.appendChild(_editTd(e.id, 'comment', e.comment || '', { placeholder: 'Comment…', minWidth: 130 }));
+    /* Old / New classification from coordinator tracking */
+    tr.appendChild(_buildOldNewCell(e.siteId));
     /* Approval status */
     tr.appendChild(_buildStatusCell(e.id, state, i));
 
@@ -353,9 +373,10 @@ function renderFuelReview(fuel) {
   if (tbody) tbody.innerHTML = '';
 
   fuel.forEach(function (f, i) {
-    var state    = reviewData[f.id] || { status: 'pending', coordinatorNote: '' };
-    var hasErr   = !!_errorEntryIds[f.id];
-    var hasKmGap = !!_kmMismatchIds[f.id];
+    var state       = reviewData[f.id] || { status: 'pending', coordinatorNote: '' };
+    var hasErr      = !!_errorEntryIds[f.id];
+    var hasKmGap    = !!_kmMismatchIds[f.id];
+    var hasSiteWarn = !!_siteNotFoundIds[f.id];
 
     var startKm  = parseFloat(f.startKm) || 0;
     var endKm    = parseFloat(f.endKm)   || 0;
@@ -366,12 +387,14 @@ function renderFuelReview(fuel) {
     if (hasKmGap) tr.classList.add('row-warning');
     if (hasErr)   tr.classList.add('has-issues');
 
-    /* # — with optional KM gap badge */
+    /* # — with optional KM gap badge and/or site-not-found badge */
     var tdNum = document.createElement('td');
     tdNum.className = 'row-num';
-    if (hasKmGap) {
-      tdNum.innerHTML = _esc(String(i + 1)) +
-        '<span class="km-warn-icon" title="KM mismatch" aria-label="KM mismatch">!</span>';
+    var numHtml = _esc(String(i + 1));
+    if (hasKmGap)    numHtml += '<span class="km-warn-icon"   title="KM mismatch"              aria-label="KM mismatch">!</span>';
+    if (hasSiteWarn) numHtml += '<span class="site-warn-icon" title="Site not in coordinator sheet" aria-label="Site not found">!</span>';
+    if (hasKmGap || hasSiteWarn) {
+      tdNum.innerHTML = numHtml;
     } else {
       tdNum.textContent = String(i + 1);
     }
@@ -397,6 +420,8 @@ function renderFuelReview(fuel) {
     /* City */        tr.appendChild(_editTd(f.id, 'city',        f.city        || '', Object.assign({}, U, { placeholder: 'City' })));
     /* Coordinator */ tr.appendChild(_editTd(f.id, 'coordinator', f.coordinator || '', Object.assign({}, U, { placeholder: 'Coordinator' })));
 
+    /* Old / New classification from coordinator tracking */
+    tr.appendChild(_buildOldNewCell(f.siteId));
     /* Approval status — last column */
     tr.appendChild(_buildStatusCell(f.id, state, i));
 
@@ -436,10 +461,11 @@ function _renderTotalsRow(fuel) {
   tdKarta.textContent = String(Math.round(totalKarta * 100) / 100);
   tr.appendChild(tdKarta);
 
-  tr.appendChild(_footTd('—'));   /* Area        */
-  tr.appendChild(_footTd('—'));   /* Driver      */
-  tr.appendChild(_footTd('—'));   /* City        */
-  tr.appendChild(_footTd('—'));   /* Coordinator */
+  tr.appendChild(_footTd('—'));   /* Area         */
+  tr.appendChild(_footTd('—'));   /* Driver       */
+  tr.appendChild(_footTd('—'));   /* City         */
+  tr.appendChild(_footTd('—'));   /* Coordinator  */
+  tr.appendChild(_footTd(''));    /* Old/New      */
   tr.appendChild(_footTd(''));    /* Approval STS */
 
   tfoot.appendChild(tr);
@@ -460,7 +486,7 @@ function updateReviewEntry(id, field, value) {
     var tr = document.querySelector('tr[data-entry-id="' + id + '"]');
     if (tr) {
       _applyRowClass(tr, value);
-      /* Fuel: preserve amber km-warning highlight regardless of status */
+      /* Preserve KM-gap amber accent regardless of status change */
       if (_kmMismatchIds[id]) tr.classList.add('row-warning');
     }
   }
@@ -650,7 +676,7 @@ function _buildStatusCell(id, state, rowIndex, isKmGap) {
   sel.className = 'status-select';
   sel.setAttribute('aria-label', 'Status for row ' + (rowIndex + 1));
 
-  [['approved', 'Approved'], ['rejected', 'Rejected']].forEach(function (pair) {
+  [['approved', 'Approved'], ['warning', 'Warning'], ['rejected', 'Rejected']].forEach(function (pair) {
     var opt = document.createElement('option');
     opt.value       = pair[0];
     opt.textContent = pair[1];
@@ -784,19 +810,22 @@ function _footTd(text, extraClass) {
 function _normalizeStatus(s) {
   if (s === 'approved') return 'approved';
   if (s === 'rejected' || s === 'flagged') return 'rejected';
+  if (s === 'warning')  return 'warning';
   return 'approved'; /* treat old 'pending' as approved */
 }
 
 function _applyRowClass(tr, status) {
-  tr.classList.remove('row-approved', 'row-flagged');
+  tr.classList.remove('row-approved', 'row-flagged', 'row-status-warning');
   if (status === 'approved') tr.classList.add('row-approved');
   if (status === 'rejected') tr.classList.add('row-flagged');
+  if (status === 'warning')  tr.classList.add('row-status-warning');
 }
 
 function _applySelectClass(sel, status) {
   sel.className = 'status-select';
   if (status === 'approved') sel.classList.add('status-approved');
   if (status === 'rejected') sel.classList.add('status-flagged');
+  if (status === 'warning')  sel.classList.add('status-warning');
 }
 
 function _esc(str) {
@@ -808,4 +837,211 @@ function _esc(str) {
 function _bindBtn(id, fn) {
   var el = document.getElementById(id);
   if (el) el.addEventListener('click', fn);
+}
+
+
+/* ==========================================================================
+   OLD / NEW CLASSIFICATION
+   Each composite site ID (e.g. "D0510/R7103") is split into individual parts.
+   Each part is looked up independently so the cell shows a labelled badge per site.
+   ========================================================================== */
+
+/* Derive settlement month/year once from the first dated import entry */
+function _computeSettlementPeriod() {
+  var _MONS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  var entries = ((importData && importData.expenses) || []).concat((importData && importData.fuel) || []);
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    if (e.date) {
+      var pts = e.date.split('-');
+      if (pts.length === 3) {
+        var m = _MONS[pts[1].toLowerCase()];
+        var y = parseInt(pts[2], 10);
+        if (m !== undefined && !isNaN(y)) return { month: m, year: y };
+      }
+    }
+  }
+  return null;
+}
+
+/* Classify a SINGLE plain site ID — no splitting, no iteration */
+function _getOldNewSingle(site) {
+  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+  if (!tracking || !tracking.map || !_settlementPeriod) return '';
+
+  var entry = tracking.map[site.toUpperCase()];
+  if (!entry) return '';
+
+  var taskDateStr = typeof entry === 'object' ? (entry.taskDate || '') : '';
+  if (!taskDateStr) return 'New'; /* empty Task Date in coordinator sheet → treat as New */
+
+  var tDate = new Date(taskDateStr);
+  if (isNaN(tDate.getTime())) return '';
+
+  var tY = tDate.getFullYear(), tM = tDate.getMonth();
+  var sY = _settlementPeriod.year,  sM = _settlementPeriod.month;
+  return (tY < sY || (tY === sY && tM < sM)) ? 'Old' : 'New';
+}
+
+/* Build a read-only <td> showing a labelled badge for EACH site part.
+   e.g. "D0510/R7103" → two rows: "D0510 [New]" and "R7103 [Old]"        */
+function _buildOldNewCell(siteId) {
+  var td = document.createElement('td');
+  td.style.cssText = 'vertical-align:middle;padding:4px 6px';
+
+  if (!siteId) { _blankOldNew(td); return td; }
+
+  var sites = String(siteId).split(/[\/,\-–—\s]+/)
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 0; });
+
+  if (!sites.length) { _blankOldNew(td); return td; }
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:3px;align-items:flex-start';
+
+  var anyLabel = false;
+
+  sites.forEach(function(site) {
+    var label = _getOldNewSingle(site);
+    var row   = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:4px;white-space:nowrap';
+
+    var siteSpan = document.createElement('span');
+    siteSpan.textContent = site;
+    siteSpan.style.cssText = 'font-size:9px;color:var(--color-text-secondary);min-width:40px';
+    row.appendChild(siteSpan);
+
+    if (label) {
+      anyLabel = true;
+      var badge = document.createElement('span');
+      badge.textContent = label;
+      badge.style.cssText = [
+        'display:inline-block',
+        'padding:1px 6px',
+        'border-radius:999px',
+        'font-size:9px',
+        'font-weight:600',
+        label === 'New'
+          ? 'background:var(--color-success-bg);color:var(--color-success);border:1px solid #a7f3d0'
+          : 'background:var(--color-warning-bg);color:var(--color-warning);border:1px solid #fde68a',
+      ].join(';');
+      row.appendChild(badge);
+    } else {
+      var dash = document.createElement('span');
+      dash.textContent = '—';
+      dash.style.cssText = 'font-size:9px;color:var(--color-text-muted)';
+      row.appendChild(dash);
+    }
+    wrap.appendChild(row);
+  });
+
+  if (!anyLabel) { _blankOldNew(td); return td; }
+  td.appendChild(wrap);
+  return td;
+}
+
+function _blankOldNew(td) {
+  td.textContent = '—';
+  td.style.cssText = 'color:var(--color-text-muted);text-align:center;font-size:var(--text-xs);vertical-align:middle';
+}
+
+/* ==========================================================================
+   SITE EXISTENCE CHECK
+   Compares each entry's siteId against the loaded coordinator tracking map.
+   Marks entries as _siteNotFoundIds when none of their site parts are found.
+   ========================================================================== */
+
+function _checkSiteExistence() {
+  _siteNotFoundIds = {};
+  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+  if (!tracking || !tracking.map || !tracking.siteCount) return;
+
+  var entries = entryType === 'fuel'
+    ? (importData.fuel     || [])
+    : (importData.expenses || []);
+
+  entries.forEach(function (e) {
+    if (!e.siteId) return;
+    /* Split composite IDs the same way lookupJC() does */
+    var parts = String(e.siteId).split(/[\/,\-–—\s]+/)
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length > 0; });
+    if (!parts.length) return;
+    var anyFound = parts.some(function (s) { return !!tracking.map[s.toUpperCase()]; });
+    if (!anyFound) _siteNotFoundIds[e.id] = e.siteId;
+  });
+}
+
+/* Only auto-set 'warning' for entries the coordinator has never explicitly saved */
+function _applyWarningStatus() {
+  Object.keys(_siteNotFoundIds).forEach(function (id) {
+    if (!_userReviewed[id] && reviewData[id] && reviewData[id].status === 'approved') {
+      reviewData[id].status = 'warning';
+    }
+  });
+}
+
+/* ==========================================================================
+   WARNINGS CARD
+   Renders a yellow card listing every unique site ID absent from the
+   coordinator tracking sheet. Hidden when no warnings or no tracking loaded.
+   ========================================================================== */
+
+function _renderWarningsCard() {
+  var card = document.getElementById('warningsCard');
+  if (!card) return;
+
+  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+  if (!tracking || !tracking.map) { card.classList.add('hidden'); return; }
+
+  /* Collect unique missing sites with their row numbers */
+  var entries = entryType === 'fuel' ? (importData.fuel || []) : (importData.expenses || []);
+  var missingSites = {}; /* siteId → [row numbers] */
+
+  entries.forEach(function (e, i) {
+    if (_siteNotFoundIds[e.id]) {
+      var site = String(e.siteId || '?');
+      if (!missingSites[site]) missingSites[site] = [];
+      missingSites[site].push(i + 1);
+    }
+  });
+
+  var siteKeys = Object.keys(missingSites);
+  if (!siteKeys.length) { card.classList.add('hidden'); return; }
+
+  card.classList.remove('hidden');
+
+  var trackingInfo = tracking.filename
+    ? '<span style="font-size:var(--text-xs);color:#92400e;opacity:.7;margin-left:auto">Checked against: ' + _esc(tracking.filename) + '</span>'
+    : '';
+
+  var itemsHtml = siteKeys.map(function (site) {
+    var rows    = missingSites[site];
+    var rowStr  = 'row' + (rows.length !== 1 ? 's' : '') + ' ' + rows.join(', ');
+    return '<li style="font-size:var(--text-sm);color:#92400e;padding:2px 0">' +
+           'Site <strong>' + _esc(site) + '</strong> — not found in coordinator sheet (' + rowStr + ')</li>';
+  }).join('');
+
+  var count = siteKeys.length;
+
+  card.innerHTML =
+    '<div style="background:var(--color-warning-bg);border:1px solid #fde68a;' +
+    'border-left:4px solid var(--color-warning);border-radius:var(--radius-md);padding:var(--sp-4)">' +
+    '  <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-3)">' +
+    '    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+    '         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
+    '         style="color:var(--color-warning);flex-shrink:0" aria-hidden="true">' +
+    '      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+    '      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' +
+    '    </svg>' +
+    '    <span style="font-weight:600;color:#92400e;font-size:var(--text-sm)">' +
+    '      Warnings — ' + count + ' site' + (count !== 1 ? 's' : '') + ' not found in coordinator sheet' +
+    '    </span>' +
+    trackingInfo +
+    '  </div>' +
+    '  <ul style="margin:0;padding-left:var(--sp-5);display:flex;flex-direction:column;gap:2px">' +
+    itemsHtml +
+    '  </ul>' +
+    '</div>';
 }

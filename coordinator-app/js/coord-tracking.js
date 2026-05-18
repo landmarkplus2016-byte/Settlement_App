@@ -34,10 +34,12 @@ function parseCoordTrackingFile(file, onSuccess, onError) {
   var reader = new FileReader();
 
   reader.onload = function (e) {
+    _ctProgress(100, 'Parsing…', true);
     var wb;
     try {
       wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
     } catch (err) {
+      _ctProgressHide();
       onError('Could not open Excel file: ' + err.message);
       return;
     }
@@ -63,25 +65,29 @@ function parseCoordTrackingFile(file, onSuccess, onError) {
     /* ---- Scan ALL rows for the header containing "Logical Site ID" and "Job Code" ----
        The header can appear anywhere in the sheet (A1, A4, etc.).
        Match is case-insensitive and whitespace-trimmed.                              */
-    var siteCol   = -1;
-    var jcCol     = -1;
-    var dataStart = 0;
+    var siteCol     = -1;
+    var jcCol       = -1;
+    var taskDateCol = -1;
+    var dataStart   = 0;
 
     for (var i = 0; i < rows.length; i++) {
       var row     = rows[i];
       var tmpSite = -1;
       var tmpJc   = -1;
+      var tmpTD   = -1;
 
       for (var c = 0; c < row.length; c++) {
         var cell = String(row[c] || '').trim().toLowerCase();
         if (cell === 'logical site id') tmpSite = c;
         if (cell === 'job code')        tmpJc   = c;
+        if (cell === 'task date')       tmpTD   = c;
       }
 
       if (tmpSite !== -1 && tmpJc !== -1) {
-        siteCol   = tmpSite;
-        jcCol     = tmpJc;
-        dataStart = i + 1;
+        siteCol     = tmpSite;
+        jcCol       = tmpJc;
+        taskDateCol = tmpTD; /* -1 if not found — optional */
+        dataStart   = i + 1;
         break;
       }
     }
@@ -101,7 +107,8 @@ function parseCoordTrackingFile(file, onSuccess, onError) {
       var siteId = String(r[siteCol] || '').trim();
       var jc     = String(r[jcCol]   || '').trim();
       if (siteId && jc) {
-        map[siteId.toUpperCase()] = jc;
+        var taskDate = taskDateCol >= 0 ? _parseExcelDate(r[taskDateCol]) : '';
+        map[siteId.toUpperCase()] = { jc: jc, taskDate: taskDate };
       }
     }
 
@@ -125,7 +132,15 @@ function parseCoordTrackingFile(file, onSuccess, onError) {
     onSuccess(trackingData);
   };
 
-  reader.onerror = function () { onError('Could not read the file.'); };
+  reader.onloadstart = function () { _ctProgress(0, 'Reading file…'); };
+
+  reader.onprogress = function (evt) {
+    if (evt.lengthComputable) {
+      _ctProgress(Math.round(evt.loaded / evt.total * 100), 'Reading file…');
+    }
+  };
+
+  reader.onerror = function () { _ctProgressHide(); onError('Could not read the file.'); };
   reader.readAsArrayBuffer(file);
 }
 
@@ -149,25 +164,76 @@ function clearCoordTracking() {
    Returns "/" joined JC results in the same order, or '' if none found.
    ========================================================================== */
 
+/* Normalize a map entry — handles old (string) and new ({ jc, taskDate }) formats */
+function _getMapEntry(trackingMap, siteKey) {
+  var e = trackingMap[siteKey];
+  if (!e) return null;
+  if (typeof e === 'string') return { jc: e, taskDate: '' }; /* backward compat */
+  return e;
+}
+
+/* Convert an Excel cell value to an ISO date string "YYYY-MM-DD".
+   Handles: Excel serial numbers, JS Date objects, and date strings. */
+function _parseExcelDate(val) {
+  if (!val && val !== 0) return '';
+  if (val instanceof Date) {
+    return val.toISOString().split('T')[0];
+  }
+  if (typeof val === 'number') {
+    /* Excel epoch: Dec 30 1899 (accounts for Lotus 1-2-3 leap-year bug) */
+    var ms = (val - 25569) * 86400000;
+    var d  = new Date(ms);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  }
+  if (typeof val === 'string') {
+    var s = val.trim();
+    if (!s) return '';
+    /* Already ISO */
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    /* Try native parse for other formats */
+    var d2 = new Date(s);
+    if (!isNaN(d2.getTime())) return d2.toISOString().split('T')[0];
+    return s; /* Return as-is if unparseable */
+  }
+  return '';
+}
+
 /* Split on any common separator: / , – (en dash) — (em dash) or whitespace.
    Each site is looked up independently; results are joined with "/". */
 function lookupJC(siteIdField, trackingMap) {
   if (!siteIdField || !trackingMap) return '';
 
   var sites = String(siteIdField)
-    .split(/[\/,\-–—\s]+/) /* / , - – — and any whitespace */
+    .split(/[\/,\-–—\s]+/)
     .map(function (s) { return s.trim(); })
     .filter(function (s) { return s.length > 0; });
 
   if (!sites.length) return '';
 
   var results = sites.map(function (s) {
-    return trackingMap[s.toUpperCase()] || '';
+    var entry = _getMapEntry(trackingMap, s.toUpperCase());
+    return entry ? (entry.jc || '') : '';
   });
 
   return results.some(function (r) { return r !== ''; })
     ? results.join('/')
     : '';
+}
+
+/* Look up the Task Date for the first matching site part */
+function lookupTaskDate(siteIdField, trackingMap) {
+  if (!siteIdField || !trackingMap) return '';
+
+  var sites = String(siteIdField)
+    .split(/[\/,\-–—\s]+/)
+    .map(function (s) { return s.trim(); })
+    .filter(function (s) { return s.length > 0; });
+
+  for (var i = 0; i < sites.length; i++) {
+    var entry = _getMapEntry(trackingMap, sites[i].toUpperCase());
+    if (entry && entry.taskDate) return entry.taskDate;
+  }
+  return '';
 }
 
 
@@ -260,21 +326,38 @@ function _handleTrackingFile(file) {
     return;
   }
 
-  var statusEl = document.getElementById('trackingParsingStatus');
-  if (statusEl) { statusEl.textContent = 'Parsing…'; statusEl.classList.remove('hidden'); }
-
   parseCoordTrackingFile(
     file,
     function (data) {
-      if (statusEl) statusEl.classList.add('hidden');
+      _ctProgressHide();
       _updateTrackingCardUI(data);
       showToast(data.siteCount + ' sites loaded from coordinator tracking', 'success');
     },
     function (err) {
-      if (statusEl) statusEl.classList.add('hidden');
+      _ctProgressHide();
       showToast('Error: ' + err, 'error');
     }
   );
+}
+
+/* ---- Progress bar helpers (import page only — no-ops elsewhere) ---- */
+function _ctProgress(pct, label, done) {
+  var wrap  = document.getElementById('trackingProgressWrap');
+  var fill  = document.getElementById('trackingProgressFill');
+  var pctEl = document.getElementById('trackingProgressPct');
+  var lblEl = document.getElementById('trackingProgressLabel');
+  if (!wrap) return;
+  wrap.classList.remove('hidden');
+  if (fill)  { fill.style.width = pct + '%'; fill.classList.toggle('complete', !!done); }
+  if (pctEl) pctEl.textContent  = pct + '%';
+  if (lblEl) lblEl.textContent  = label || 'Reading…';
+}
+
+function _ctProgressHide() {
+  var wrap = document.getElementById('trackingProgressWrap');
+  if (wrap) wrap.classList.add('hidden');
+  var fill = document.getElementById('trackingProgressFill');
+  if (fill) { fill.style.width = '0%'; fill.classList.remove('complete'); }
 }
 
 function _updateTrackingCardUI(data) {

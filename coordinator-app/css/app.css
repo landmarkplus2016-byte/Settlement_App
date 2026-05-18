@@ -14,6 +14,124 @@
   --color-primary-hover:  #054a3a;
   --color-primary-light:  #d1fae5;
   --color-primary-subtle: #ecfdf5;
+  --color-border-focus:   #065f46;
+}
+
+/* ==========================================================================
+   COLOUR THEMES — override only the primary palette variables.
+   Applied to <html data-coord-theme="...">. Everything else is automatic.
+   ========================================================================== */
+
+[data-coord-theme="navy"] {
+  --color-primary:        #1e3a5f;
+  --color-primary-hover:  #162d4a;
+  --color-primary-light:  #dbeafe;
+  --color-primary-subtle: #eff6ff;
+  --color-border-focus:   #1e3a5f;
+}
+[data-coord-theme="ocean"] {
+  --color-primary:        #0369a1;
+  --color-primary-hover:  #025585;
+  --color-primary-light:  #bae6fd;
+  --color-primary-subtle: #f0f9ff;
+  --color-border-focus:   #0369a1;
+}
+[data-coord-theme="slate"] {
+  --color-primary:        #334155;
+  --color-primary-hover:  #1e293b;
+  --color-primary-light:  #e2e8f0;
+  --color-primary-subtle: #f1f5f9;
+  --color-border-focus:   #334155;
+}
+[data-coord-theme="rose"] {
+  --color-primary:        #9f1239;
+  --color-primary-hover:  #881030;
+  --color-primary-light:  #fce7f3;
+  --color-primary-subtle: #fff1f2;
+  --color-border-focus:   #9f1239;
+}
+[data-coord-theme="amber"] {
+  --color-primary:        #92400e;
+  --color-primary-hover:  #78350f;
+  --color-primary-light:  #fde68a;
+  --color-primary-subtle: #fffbeb;
+  --color-border-focus:   #92400e;
+}
+
+/* ==========================================================================
+   THEME PICKER — palette icon + swatch panel injected into navbar
+   ========================================================================== */
+
+.theme-picker {
+  position: relative;
+}
+
+.theme-picker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.theme-picker-btn:hover {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+}
+
+.theme-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+}
+.theme-panel.hidden { display: none; }
+[dir="rtl"] .theme-panel { right: auto; left: 0; }
+
+.theme-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.theme-swatch:hover { transform: scale(1.2); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.theme-swatch.active { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.35); }
+
+/* ==========================================================================
+   BACKGROUND IMAGE — fixed, 10% opacity (90% transparent)
+   ========================================================================== */
+
+.coord-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('../BCKGRND.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.10;
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* ==========================================================================
@@ -38,6 +156,14 @@
   gap: var(--sp-2);
   flex: 1;
   min-width: 0;
+}
+
+.coord-navbar-logo {
+  height: 38px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .coord-navbar-title {

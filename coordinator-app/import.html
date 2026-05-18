@@ -209,6 +209,46 @@
       margin-top: var(--sp-5);
     }
 
+    /* Upload progress bar */
+    .upload-progress-wrap {
+      margin-top: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-primary-light);
+      border-radius: var(--radius-md);
+    }
+    .upload-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .upload-progress-label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--color-primary);
+    }
+    .upload-progress-pct {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-primary);
+      direction: ltr;
+    }
+    .upload-progress-track {
+      height: 6px;
+      background: var(--color-primary-light);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+    }
+    .upload-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--color-primary);
+      border-radius: var(--radius-pill);
+      transition: width 200ms ease;
+    }
+    .upload-progress-fill.complete { background: var(--color-success); }
+
     /* coord-nav-link active style (in navbar) */
     .coord-nav-link {
       font-size: var(--text-sm);
@@ -241,7 +281,8 @@
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </a>
-      <span class="coord-navbar-title">ExpenseFuel — Coordinator</span>
+      <img src="LMP Big Logo-Photoroom.png" class="coord-navbar-logo" alt="Landmark Plus" />
+      <span class="coord-navbar-title">Expense-Fuel Settlement Checker</span>
       <span class="coord-role-chip">Coordinator</span>
     </div>
 
@@ -339,7 +380,17 @@
       </div>
 
       <input type="file" id="trackingFileInput" accept=".xlsx,.xlsm,.xlsb,.xls,.xlt,.xltx,.xltm" style="display:none" aria-hidden="true" tabindex="-1" />
-      <p id="trackingParsingStatus" class="hidden" style="font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--sp-3)">Parsing…</p>
+
+      <!-- Coordinator tracking upload progress -->
+      <div id="trackingProgressWrap" class="upload-progress-wrap hidden" role="status" aria-live="polite">
+        <div class="upload-progress-header">
+          <span id="trackingProgressLabel" class="upload-progress-label">Reading file…</span>
+          <span id="trackingProgressPct"   class="upload-progress-pct">0%</span>
+        </div>
+        <div class="upload-progress-track">
+          <div id="trackingProgressFill" class="upload-progress-fill"></div>
+        </div>
+      </div>
 
     </div><!-- /coordTrackingCard -->
 
@@ -388,6 +439,17 @@
           </div>
         </div>
       </div><!-- /dropZoneSection -->
+
+      <!-- Expense file upload progress -->
+      <div id="expenseProgressWrap" class="upload-progress-wrap hidden" role="status" aria-live="polite">
+        <div class="upload-progress-header">
+          <span id="expenseProgressLabel" class="upload-progress-label">Reading file…</span>
+          <span id="expenseProgressPct"   class="upload-progress-pct">0%</span>
+        </div>
+        <div class="upload-progress-track">
+          <div id="expenseProgressFill" class="upload-progress-fill"></div>
+        </div>
+      </div>
 
       <!-- Loaded state — shown after file is parsed, before confirm -->
       <div id="expenseLoadedState" class="hidden">

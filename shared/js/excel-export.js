@@ -517,15 +517,16 @@ function _addDataRows(ws, dataStart, n, rows) {
 /* -----------------------------------------------------------------------
    Expense sheet  (n=10, A-J)
    ----------------------------------------------------------------------- */
-function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId) {
-  var n  = 10;
-  var ws = wb.addWorksheet('Expenses Tracking');
+function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId, label) {
+  var n        = 10;
+  var tabTitle = 'Expenses Tracking' + (label ? '-' + label : '');
+  var ws = wb.addWorksheet(tabTitle);
   ws.columns = [
     {width:8},{width:6},{width:14},{width:16},{width:14},
     {width:18},{width:32},{width:12},{width:24},{width:18}
   ];
 
-  _addHeaderRows(ws, n, 'Expenses Tracking', settings, logoId);
+  _addHeaderRows(ws, n, tabTitle, settings, logoId);
 
   /* Row 4: Name + Total */
   var expTotal = expenses.reduce(function(s,e){return s+(parseFloat(e.amount)||0);},0);
@@ -544,7 +545,8 @@ function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId) {
 
   var dataRows = expenses.map(function(e) {
     return [e.month||'', e.day||'', e.projectName||'', e.siteId||'', e.jobCode||'',
-            e.category||'', e.itemDescription||'', parseFloat(e.amount)||0, e.comment||'', e.coordinator||''];
+            e.category||'', e.itemDescription||'', parseFloat(e.amount)||0, e.comment||'',
+            settings.coordName || e.coordinator || ''];
   });
   _addDataRows(ws, 7, n, dataRows);
   /* Amount numFmt */
@@ -558,15 +560,16 @@ function _buildCoordExpensesSheetXLSX(wb, settings, expenses, logoId) {
 /* -----------------------------------------------------------------------
    Fuel sheet  (n=13, A-M)
    ----------------------------------------------------------------------- */
-function _buildCoordFuelSheetXLSX(wb, settings, fuel, logoId) {
-  var n  = 13;
-  var ws = wb.addWorksheet('Fuel Tracking');
+function _buildCoordFuelSheetXLSX(wb, settings, fuel, logoId, label) {
+  var n        = 13;
+  var tabTitle = 'Fuel Tracking' + (label ? '-' + label : '');
+  var ws = wb.addWorksheet(tabTitle);
   ws.columns = [
     {width:8},{width:6},{width:14},{width:16},{width:14},
     {width:12},{width:12},{width:12},{width:12},{width:16},{width:14},{width:12},{width:18}
   ];
 
-  _addHeaderRows(ws, n, 'Fuel Tracking', settings, logoId);
+  _addHeaderRows(ws, n, tabTitle, settings, logoId);
 
   /* Row 4: Name | Total | Fuel | Karta */
   var fuelTotal  = fuel.reduce(function(s,f){return s+(parseFloat(f.fuelAmount)||0);},0);
@@ -592,7 +595,8 @@ function _buildCoordFuelSheetXLSX(wb, settings, fuel, logoId) {
   var dataRows = fuel.map(function(f) {
     return [f.month||'', f.day||'', f.projectName||'', f.siteId||'', f.jobCode||'',
             parseFloat(f.startKm)||0, parseFloat(f.endKm)||0, parseFloat(f.fuelAmount)||0,
-            f.area||'', f.driver||'', f.city||'', parseFloat(f.kartaAmount)||0, f.coordinator||''];
+            f.area||'', f.driver||'', f.city||'', parseFloat(f.kartaAmount)||0,
+            settings.coordName || f.coordinator || ''];
   });
   _addDataRows(ws, 7, n, dataRows);
   /* Fuel + Karta numFmt */
@@ -732,26 +736,89 @@ async function generateCoordinatorExcel(importData, reviewData) {
   var rejectedExpenses = allExp.filter(function(e)  { return review[e.id] && review[e.id].status === 'rejected'; });
   var rejectedFuel     = allFuel.filter(function(f)  { return review[f.id] && review[f.id].status === 'rejected'; });
 
+  /* Load coordinator name from coordinator app settings */
+  var coordName = '';
+  try {
+    var _cs = localStorage.getItem('coord_settings');
+    if (_cs) coordName = (JSON.parse(_cs).name || '').trim();
+  } catch (_) {}
+
+  /* Load coordinator tracking for Old/New classification */
+  var trackingMap = null;
+  try {
+    var _ct = localStorage.getItem('coord_tracking');
+    if (_ct) { var _ctd = JSON.parse(_ct); trackingMap = _ctd ? _ctd.map : null; }
+  } catch (_) {}
+
+  /* Derive settlement month/year from entries */
+  var _MONS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  var sMonth = null, sYear = null;
+  var _allForDate = allExp.concat(allFuel);
+  for (var _di = 0; _di < _allForDate.length; _di++) {
+    var _de = _allForDate[_di];
+    if (_de.date) {
+      var _dp = _de.date.split('-');
+      if (_dp.length === 3) {
+        var _dm = _MONS[_dp[1].toLowerCase()];
+        var _dy = parseInt(_dp[2], 10);
+        if (_dm !== undefined && !isNaN(_dy)) { sMonth = _dm; sYear = _dy; break; }
+      }
+    }
+  }
+
+  /* Classify a single entry as 'new' or 'old' */
+  function _classify(siteId) {
+    if (!trackingMap || sMonth === null) return 'new';
+    var sites = String(siteId || '').split(/[\/,\-–—\s]+/).map(function(s){return s.trim();}).filter(Boolean);
+    for (var si = 0; si < sites.length; si++) {
+      var ent = trackingMap[sites[si].toUpperCase()];
+      var td  = ent ? (typeof ent === 'object' ? ent.taskDate : '') : '';
+      if (!td) continue;
+      var tDate = new Date(td);
+      if (isNaN(tDate.getTime())) continue;
+      var tY = tDate.getFullYear(), tM = tDate.getMonth();
+      return (tY < sYear || (tY === sYear && tM < sMonth)) ? 'old' : 'new';
+    }
+    return 'new'; /* default: no task date → treat as New */
+  }
+
+  /* Split approved entries */
+  var expNew = [], expOld = [];
+  approvedExpenses.forEach(function(e) { (_classify(e.siteId) === 'old' ? expOld : expNew).push(e); });
+
+  var fuelNew = [], fuelOld = [];
+  approvedFuel.forEach(function(f) { (_classify(f.siteId) === 'old' ? fuelOld : fuelNew).push(f); });
+
   var settings = {
     name:           member.name           || '',
     trackingNumber: member.trackingNumber || (importData && importData.trackingNumber) || 0,
     accountType:    member.accountType    || 'New',
+    coordName:      coordName,
   };
 
-  var wb     = new ExcelJS.Workbook();
-  wb.creator = 'ExpenseFuel Coordinator';
-  wb.created = new Date();
-
   var logoBuffer = await _fetchLogo();
-  var logoId = (logoBuffer && wb.addImage) ? wb.addImage({ buffer: logoBuffer, extension: 'jpeg' }) : null;
 
-  _buildCoordExpensesSheetXLSX(wb, settings, approvedExpenses, logoId);
-  _buildCoordFuelSheetXLSX(wb, settings, approvedFuel, logoId);
-  if (rejectedExpenses.length + rejectedFuel.length > 0) {
-    _buildRejectedSheetXLSX(wb, rejectedExpenses, rejectedFuel);
+  /* Build workbook for a given label ('New' or 'Old') */
+  async function _buildWb(exp, fuel, label) {
+    var wb     = new ExcelJS.Workbook();
+    wb.creator = 'Expense-Fuel Settlement Checker';
+    wb.created = new Date();
+    var lId = (logoBuffer && wb.addImage) ? wb.addImage({ buffer: logoBuffer, extension: 'jpeg' }) : null;
+    _buildCoordExpensesSheetXLSX(wb, settings, exp,  lId, label);
+    _buildCoordFuelSheetXLSX(wb,     settings, fuel, lId, label);
+    if (rejectedExpenses.length + rejectedFuel.length > 0) {
+      _buildRejectedSheetXLSX(wb, rejectedExpenses, rejectedFuel);
+    }
+    return wb;
   }
 
-  return wb;
+  var hasNew = expNew.length > 0 || fuelNew.length > 0;
+  var hasOld = expOld.length > 0 || fuelOld.length > 0;
+
+  return {
+    new: hasNew ? await _buildWb(expNew, fuelNew, 'New') : null,
+    old: hasOld ? await _buildWb(expOld, fuelOld, 'Old') : null,
+  };
 }
 
 /* --------------------------------------------------------------------------
