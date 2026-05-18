@@ -60,8 +60,8 @@ function _setActiveNavTab() {
     item.classList.toggle('active', isMatch);
   });
 
-  /* Navbar inline links (.coord-nav-link) */
-  document.querySelectorAll('.coord-nav-link').forEach(function (item) {
+  /* Navbar inline links (.coord-nav-link) and icon buttons (.navbar-icon-btn) */
+  document.querySelectorAll('.coord-nav-link, .navbar-icon-btn').forEach(function (item) {
     var href = (item.getAttribute('href') || '').split('/').pop();
     var isMatch = href === filename ||
                   (filename === 'index.html' && (href === '' || href === '#'));
@@ -173,7 +173,9 @@ function _injectThemePicker() {
     swatches +
     '</div>';
 
-  langToggle.parentNode.insertBefore(wrap, langToggle);
+  var settingsBtn = document.querySelector('.navbar .navbar-icon-btn');
+  var anchor = settingsBtn || langToggle;
+  anchor.parentNode.insertBefore(wrap, anchor);
 }
 
 /* Set & persist a theme */

@@ -14,19 +14,6 @@
        Page-scoped
     ----------------------------------------------------------------------- */
 
-    .coord-nav-link {
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--color-text-secondary);
-      text-decoration: none;
-      padding: var(--sp-2) var(--sp-3);
-      border-radius: var(--radius-md);
-      transition: var(--transition);
-      white-space: nowrap;
-    }
-    .coord-nav-link:hover  { color: var(--color-primary); background: var(--color-primary-subtle); }
-    .coord-nav-link.active { color: var(--color-primary); font-weight: 600; }
-
     /* Warning note below checklist */
     .export-warning-note {
       display: flex;
@@ -225,7 +212,15 @@
     <div class="navbar-actions">
       <a href="index.html"    class="coord-nav-link" data-i18n="dashboard">Dashboard</a>
       <a href="import.html"   class="coord-nav-link" data-i18n="import">Import</a>
-      <a href="settings.html" class="coord-nav-link" data-i18n="settings">Settings</a>
+      <a href="jc-finder.html" class="coord-nav-link">JC Finder</a>
+
+      <a href="settings.html" class="navbar-icon-btn" aria-label="Settings" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </a>
 
       <div class="lang-toggle" role="group" aria-label="Language toggle">
         <button id="btnEn" aria-pressed="true">EN</button>

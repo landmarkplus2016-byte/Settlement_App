@@ -118,7 +118,7 @@
 .theme-swatch.active { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.35); }
 
 /* ==========================================================================
-   BACKGROUND IMAGE — fixed, 10% opacity (90% transparent)
+   BACKGROUND IMAGE — fixed, 15% opacity (85% transparent)
    ========================================================================== */
 
 .coord-page::before {
@@ -129,7 +129,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.10;
+  opacity: 0.15;
   z-index: -1;
   pointer-events: none;
 }
@@ -149,6 +149,41 @@
 /* ==========================================================================
    2. NAVBAR — Coordinator App
    ========================================================================== */
+
+/* Settings gear icon button in navbar */
+.navbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.navbar-icon-btn:hover,
+.navbar-icon-btn.active {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+}
+
+/* Inline nav links (Dashboard / Import / Settings / JC Finder) */
+.coord-nav-link {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.coord-nav-link:hover  { color: var(--color-primary); background: var(--color-primary-subtle); }
+.coord-nav-link.active { color: var(--color-primary); font-weight: 600; }
 
 .coord-navbar-brand {
   display: flex;
