@@ -96,7 +96,7 @@ function _buildExpensesSheet(settings, expenses) {
   rows.push(_blankRow(NCOLS, { 0: 'Expenses Tracking' }));
   rows.push(_blankRow(NCOLS, {
     0: 'Account:',
-    1: settings.accountType || 'New',
+    1: 'VF',
     3: 'VF',
   }));
   rows.push(_blankRow(NCOLS, {
@@ -178,7 +178,7 @@ function _buildFuelSheet(settings, fuel) {
   rows.push(_blankRow(NCOLS, { 0: 'Fuel Tracking' }));
   rows.push(_blankRow(NCOLS, {
     0: 'Account:',
-    1: settings.accountType || 'New',
+    1: 'VF',
     3: 'VF',
   }));
   rows.push(_blankRow(NCOLS, {

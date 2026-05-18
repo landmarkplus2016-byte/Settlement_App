@@ -392,7 +392,7 @@
     <!-- =====================================================================
          2. EXPENSE FILE CARD (second, same compact style)
     ====================================================================== -->
-    <div class="card" style="margin-top:var(--sp-4)">
+    <div class="card" style="margin-top:var(--sp-6)">
 
       <div class="card-header" style="border-bottom:1px solid var(--color-border);padding-bottom:var(--sp-4);margin-bottom:var(--sp-4)">
         <div>
@@ -504,7 +504,7 @@
     <!-- =====================================================================
          PREVIEW SECTION — hidden until a file is successfully parsed
     ====================================================================== -->
-    <div id="previewSection" class="hidden" aria-live="polite">
+    <div id="previewSection" class="hidden" aria-live="polite" style="margin-top:var(--sp-6)">
 
       <div class="card">
 
@@ -592,90 +592,6 @@
           </div>
 
         </div><!-- /count-pills -->
-
-        <!-- -----------------------------------------------------------------
-             EXPENSE ENTRIES PREVIEW — first 3 rows
-        ------------------------------------------------------------------ -->
-        <p class="preview-section-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          <span data-i18n="expenses">Expenses</span>
-          <span class="badge badge-primary" id="expensePreviewBadge" style="margin-left:var(--sp-2)">preview</span>
-        </p>
-
-        <div id="expensePreviewWrap">
-          <div class="preview-table-wrap">
-            <table class="table" id="expensePreviewTable" aria-label="Expense entries preview">
-              <thead>
-                <tr>
-                  <th data-i18n="date">Date</th>
-                  <th data-i18n="siteId">Site ID</th>
-                  <th data-i18n="category">Category</th>
-                  <th data-i18n="description">Description</th>
-                  <th data-i18n="amount">Amount</th>
-                </tr>
-              </thead>
-              <tbody id="expensePreviewBody">
-                <!-- Populated by import.js -->
-              </tbody>
-            </table>
-          </div>
-          <p class="form-hint" id="expenseMoreHint" style="margin-top:var(--sp-2)"></p>
-        </div>
-
-        <!-- Empty state for expenses -->
-        <div id="expenseEmptyState" class="hidden"
-             style="padding:var(--sp-4);text-align:center;color:var(--color-text-muted);font-size:var(--text-sm)">
-          <span data-i18n="noExpenses">No expense entries in this file.</span>
-        </div>
-
-
-        <!-- -----------------------------------------------------------------
-             FUEL ENTRIES PREVIEW — first 3 rows
-        ------------------------------------------------------------------ -->
-        <p class="preview-section-title" style="margin-top:var(--sp-6)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 22V9a4 4 0 0 1 4-4h10l3 3v14"></path>
-            <path d="M3 22h18"></path>
-            <rect x="7" y="14" width="4" height="8"></rect>
-          </svg>
-          <span data-i18n="fuel">Fuel</span>
-          <span class="badge badge-primary" id="fuelPreviewBadge" style="margin-left:var(--sp-2)">preview</span>
-        </p>
-
-        <div id="fuelPreviewWrap">
-          <div class="preview-table-wrap">
-            <table class="table" id="fuelPreviewTable" aria-label="Fuel entries preview">
-              <thead>
-                <tr>
-                  <th data-i18n="date">Date</th>
-                  <th data-i18n="siteId">Site ID</th>
-                  <th data-i18n="startKm">Start KM</th>
-                  <th data-i18n="endKm">End KM</th>
-                  <th data-i18n="fuelAmount">Fuel (EGP)</th>
-                  <th data-i18n="driver">Driver</th>
-                </tr>
-              </thead>
-              <tbody id="fuelPreviewBody">
-                <!-- Populated by import.js -->
-              </tbody>
-            </table>
-          </div>
-          <p class="form-hint" id="fuelMoreHint" style="margin-top:var(--sp-2)"></p>
-        </div>
-
-        <!-- Empty state for fuel -->
-        <div id="fuelEmptyState" class="hidden"
-             style="padding:var(--sp-4);text-align:center;color:var(--color-text-muted);font-size:var(--text-sm)">
-          <span data-i18n="noFuel">No fuel entries in this file.</span>
-        </div>
-
 
         <!-- -----------------------------------------------------------------
              CONFIRM / CANCEL
