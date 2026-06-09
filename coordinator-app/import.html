@@ -209,6 +209,21 @@
       margin-top: var(--sp-5);
     }
 
+    /* JC file drop zone (shared with jc-finder.html) */
+    .jc-drop-zone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-6) var(--sp-4);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .jc-drop-zone:hover,
+    .jc-drop-zone.dragging {
+      border-color: var(--color-primary);
+      background: var(--color-primary-subtle);
+    }
+
     /* Upload progress bar */
     .upload-progress-wrap {
       margin-top: var(--sp-3);
@@ -305,6 +320,21 @@
     </div>
 
 
+    <!-- Lock banner: shown above Coordinator Tracking card when JC Finder file is loaded -->
+    <div id="coordTrackingLockBanner" class="hidden"
+         style="display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4);
+                background:var(--color-warning-bg);border:1px solid #fde68a;
+                border-radius:var(--radius-md);margin-bottom:var(--sp-3);
+                font-size:var(--text-xs);color:#92400e">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+           style="flex-shrink:0" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span>JC Finder File is loaded — clear it first to switch to Coordinator Tracking.</span>
+    </div>
+
     <!-- =====================================================================
          1. COORDINATOR TRACKING CARD (first)
     ====================================================================== -->
@@ -389,8 +419,98 @@
     </div><!-- /coordTrackingCard -->
 
 
+    <!-- Lock banner: shown above JC Finder card when Coordinator Tracking is loaded -->
+    <div id="jcFileLockBanner" class="hidden"
+         style="display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-4);
+                background:var(--color-warning-bg);border:1px solid #fde68a;
+                border-radius:var(--radius-md);margin-bottom:var(--sp-3);margin-top:var(--sp-6);
+                font-size:var(--text-xs);color:#92400e">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+           style="flex-shrink:0" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span>Coordinator Tracking is loaded — clear it first to switch to JC Finder File.</span>
+    </div>
+
     <!-- =====================================================================
-         2. EXPENSE FILE CARD (second, same compact style)
+         2. JC FINDER FILE CARD
+    ====================================================================== -->
+    <div class="card" style="margin-top:var(--sp-6)" id="jcFileCard">
+
+      <div class="card-header" style="border-bottom:1px solid var(--color-border);padding-bottom:var(--sp-4);margin-bottom:var(--sp-4)">
+        <div>
+          <h2 class="card-title" style="display:flex;align-items:center;gap:var(--sp-2)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            JC Finder File
+          </h2>
+          <p style="font-size:var(--text-sm);color:var(--color-text-secondary);margin-top:4px">
+            Upload a JC tracking file with a combined <strong>Site ID-JC</strong> column. Used to identify Job Codes and flag Old vs. New sites during review.
+          </p>
+        </div>
+      </div>
+
+      <!-- Empty / drop state -->
+      <div id="jcFileEmpty">
+        <div id="jcDropZone" class="jc-drop-zone" role="button" tabindex="0"
+             aria-label="Drop JC tracking Excel file here, or press Enter to browse">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round"
+               style="color:var(--color-text-muted);margin-bottom:var(--sp-2)" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p style="font-size:var(--text-sm);color:var(--color-text-secondary);margin:0 0 var(--sp-3)">Drop the JC tracking Excel file here</p>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnBrowseJC"
+                  onclick="event.stopPropagation()">Browse File</button>
+          <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin:var(--sp-3) 0 0">
+            Column: <strong>Site ID-JC</strong> &nbsp;·&nbsp; Optional: <strong>Old/New</strong>, <strong>Task Date</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Loaded state -->
+      <div id="jcFileLoaded" class="hidden">
+        <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--color-success-bg);border:1px solid #a7f3d0;border-radius:var(--radius-md)">
+          <div style="width:36px;height:36px;border-radius:50%;background:#d1fae5;color:var(--color-success);display:flex;align-items:center;justify-content:center;flex-shrink:0" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div id="jcFilename" style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</div>
+            <div id="jcSiteCount" style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px">—</div>
+          </div>
+          <div style="display:flex;gap:var(--sp-2);flex-shrink:0">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnReplaceJC">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Replace
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnClearJC" style="color:var(--color-danger)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="jcFileInput" accept=".xlsx,.xlsm,.xlsb,.xls,.xlt,.xltx,.xltm" style="display:none" aria-hidden="true" tabindex="-1" />
+
+    </div><!-- /jcFileCard -->
+
+
+    <!-- =====================================================================
+         3. EXPENSE FILE CARD (third, same compact style)
     ====================================================================== -->
     <div class="card" style="margin-top:var(--sp-6)">
 
@@ -641,10 +761,60 @@
   <script src="js/app.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/coord-tracking.js"></script>
+  <script src="js/jc-finder.js"></script>
   <script src="js/import.js"></script>
   <script>
+    /* Dim whichever tracking card is not in use.
+       Only one source should be loaded at a time.
+       When coord_tracking is loaded → dim the JC Finder card (and vice versa). */
+    function _syncTrackingDimState() {
+      var coordData = loadFromStorage('coord_tracking',     null);
+      var jcData    = loadFromStorage('jc_finder_tracking', null);
+      var coordOn   = coordData && coordData.siteCount > 0;
+      var jcOn      = jcData    && jcData.siteCount    > 0;
+
+      var coordCard        = document.getElementById('coordTrackingCard');
+      var coordLockBanner  = document.getElementById('coordTrackingLockBanner');
+      var jcCard           = document.getElementById('jcFileCard');
+      var jcLockBanner     = document.getElementById('jcFileLockBanner');
+
+      if (coordOn && !jcOn) {
+        /* Coord loaded → lock JC card */
+        if (jcCard)          { jcCard.style.opacity = '0.38'; jcCard.style.pointerEvents = 'none'; }
+        if (jcLockBanner)    jcLockBanner.classList.remove('hidden');
+        /* Ensure coord card is unlocked */
+        if (coordCard)       { coordCard.style.opacity = ''; coordCard.style.pointerEvents = ''; }
+        if (coordLockBanner) coordLockBanner.classList.add('hidden');
+      } else if (jcOn && !coordOn) {
+        /* JC loaded → lock coord card */
+        if (coordCard)       { coordCard.style.opacity = '0.38'; coordCard.style.pointerEvents = 'none'; }
+        if (coordLockBanner) coordLockBanner.classList.remove('hidden');
+        /* Ensure JC card is unlocked */
+        if (jcCard)          { jcCard.style.opacity = ''; jcCard.style.pointerEvents = ''; }
+        if (jcLockBanner)    jcLockBanner.classList.add('hidden');
+      } else {
+        /* Neither or both → unlock both */
+        if (coordCard)       { coordCard.style.opacity = ''; coordCard.style.pointerEvents = ''; }
+        if (jcCard)          { jcCard.style.opacity = ''; jcCard.style.pointerEvents = ''; }
+        if (coordLockBanner) coordLockBanner.classList.add('hidden');
+        if (jcLockBanner)    jcLockBanner.classList.add('hidden');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       initCoordTrackingCard();
+      _syncTrackingDimState();
+
+      /* Watch the loaded-state elements for class changes — fires when either
+         card transitions between empty/loaded, so we re-sync dim state. */
+      if (window.MutationObserver) {
+        var _obs = new MutationObserver(_syncTrackingDimState);
+        var _obsOpts = { attributes: true, attributeFilter: ['class'] };
+        var tlsEl = document.getElementById('trackingLoadedState');
+        var jflEl = document.getElementById('jcFileLoaded');
+        if (tlsEl) _obs.observe(tlsEl, _obsOpts);
+        if (jflEl) _obs.observe(jflEl, _obsOpts);
+      }
     });
   </script>
 

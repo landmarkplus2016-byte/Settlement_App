@@ -109,7 +109,7 @@ table {
   --sp-10: 40px;
 
   /* Typography */
-  --font:      'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font:      'Candara', Calibri, 'Segoe UI', system-ui, -apple-system, sans-serif;
   --text-xs:   11px;
   --text-sm:   13px;
   --text-base: 15px;
@@ -735,16 +735,18 @@ small { font-size: var(--text-sm); color: var(--color-text-muted); }
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--color-surface-2);
 }
 
 .table-wrapper thead th {
-  padding: var(--sp-3) var(--sp-4);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  padding: 11px var(--sp-4);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  background: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
   white-space: nowrap;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.15);
   text-align: left;
 }
 
@@ -778,6 +780,72 @@ small { font-size: var(--text-sm); color: var(--color-text-muted); }
 
 .row-approved {
   background: var(--color-success-bg) !important;
+}
+
+/* Standalone .table — used by review tables, JC Finder, etc.
+   Professional header: solid primary background, white uppercase text,
+   no-wrap so column labels never break across lines.                    */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-family: var(--font);
+}
+
+.table thead tr {
+  background: var(--color-primary);
+}
+
+.table thead th {
+  padding: 11px var(--sp-3);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  white-space: nowrap;
+  text-align: left;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+
+/* RTL: right-align header text */
+[dir="rtl"] .table thead th { text-align: right; }
+
+/* First column: centred row-number cell */
+.table thead th:first-child {
+  text-align: center;
+  padding-left: var(--sp-2);
+  padding-right: var(--sp-2);
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition);
+}
+
+.table tbody tr:last-child { border-bottom: none; }
+
+.table tbody tr:hover {
+  background: var(--color-primary-subtle);
+}
+
+.table tbody td {
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.table tfoot tr {
+  border-top: 2px solid var(--color-border);
+  background: var(--color-surface-2);
+}
+
+.table tfoot td {
+  padding: var(--sp-2) var(--sp-3);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 /* ==========================================================================

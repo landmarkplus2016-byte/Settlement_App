@@ -29,11 +29,12 @@ var reviewData = {};   /* { [entryId]: { status, coordinatorNote } } */
 var entryType  = null; /* 'expenses' | 'fuel' */
 
 /* Private tracking sets populated during validation */
-var _errorEntryIds   = {}; /* entries with per-field validation failures */
-var _kmMismatchIds   = {}; /* fuel entries with KM continuity gaps */
-var _siteNotFoundIds = {}; /* entries whose site ID is absent from coord tracking */
-var _userReviewed    = {}; /* entries that already had saved coordinator decisions */
+var _errorEntryIds    = {}; /* entries with per-field validation failures */
+var _kmMismatchIds    = {}; /* fuel entries with KM continuity gaps */
+var _siteNotFoundIds  = {}; /* entries whose site ID is absent from coord tracking */
+var _userReviewed     = {}; /* entries that already had saved coordinator decisions */
 var _settlementPeriod = null; /* { month:0-11, year } derived once from import dates */
+var _jcFinderTracking = null; /* jc_finder_tracking cached on page load */
 
 /* ==========================================================================
    INIT
@@ -107,7 +108,8 @@ function initReviewPage() {
 
   _autoFlagIssues(validationResult);
 
-  /* ---- 7b. Site existence check + Old/New setup ---- */
+  /* ---- 7b. Cache JC Finder tracking, run site existence + Old/New setup ---- */
+  _jcFinderTracking = loadFromStorage('jc_finder_tracking', null);
   _settlementPeriod = _computeSettlementPeriod();
   _checkSiteExistence();
   _applyWarningStatus();
@@ -567,14 +569,25 @@ function approveAll() {
    ========================================================================== */
 
 function applyCoordTracking() {
-  /* Guard: tracking must be loaded */
-  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
-  if (!tracking || !tracking.map || tracking.siteCount === 0) {
-    showToast('No coordinator tracking loaded — upload it on the Import page first', 'warning');
+  /* Prefer JC Finder file; fall back to Coordinator Tracking */
+  var jcData    = loadFromStorage('jc_finder_tracking', null);
+  var coordData = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+
+  var activeMap  = null;
+  var sourceName = '';
+  if (jcData && jcData.map && jcData.siteCount > 0) {
+    activeMap  = jcData.map;
+    sourceName = 'JC Finder file';
+  } else if (coordData && coordData.map && coordData.siteCount > 0) {
+    activeMap  = coordData.map;
+    sourceName = 'Coordinator Tracking';
+  }
+
+  if (!activeMap) {
+    showToast('No tracking loaded — upload a JC Finder File or Coordinator Tracking on the Import page first', 'warning');
     return;
   }
 
-  /* Work on whichever tab is currently open */
   var entries = importData
     ? (entryType === 'fuel' ? (importData.fuel || []) : (importData.expenses || []))
     : [];
@@ -583,17 +596,12 @@ function applyCoordTracking() {
   var skipped = 0;
 
   entries.forEach(function (e) {
-    var jc = (typeof lookupJC === 'function')
-      ? lookupJC(e.siteId, tracking.map)
-      : '';
-
+    var jc = (typeof lookupJC === 'function') ? lookupJC(e.siteId, activeMap) : '';
     if (!jc) { skipped++; return; }
 
-    /* Update in-memory entry */
     e.jobCode = jc;
     filled++;
 
-    /* Update the visible textarea (Job Code uses wrap:true → textarea) */
     var jcEl = document.querySelector('[data-jc-cell="' + e.id + '"]');
     if (jcEl) {
       jcEl.value = jc;
@@ -602,19 +610,18 @@ function applyCoordTracking() {
     }
   });
 
-  /* Persist the updated import data so it survives a page reload */
   if (filled > 0 && importId) {
     saveToStorage('imported_' + importId, importData);
   }
 
   if (filled > 0) {
-    var msg = 'Auto-filled ' + filled + ' Job Code' + (filled !== 1 ? 's' : '');
-    if (skipped > 0) msg += ' (' + skipped + ' site' + (skipped !== 1 ? 's' : '') + ' not found in tracking)';
+    var msg = 'Auto-filled ' + filled + ' Job Code' + (filled !== 1 ? 's' : '') + ' from ' + sourceName;
+    if (skipped > 0) msg += ' (' + skipped + ' site' + (skipped !== 1 ? 's' : '') + ' not found)';
     showToast(msg, 'success');
   } else {
     showToast(
       skipped > 0
-        ? 'No matching sites found in coordinator tracking'
+        ? 'No matching sites found in tracking'
         : 'Nothing to fill — all Job Codes already set',
       'info'
     );
@@ -866,14 +873,22 @@ function _computeSettlementPeriod() {
 
 /* Classify a SINGLE plain site ID — no splitting, no iteration */
 function _getOldNewSingle(site) {
+  var key = site.toUpperCase();
+
+  /* 1. JC Finder file has an explicit Old/New column — use it directly */
+  if (_jcFinderTracking && _jcFinderTracking.map && _jcFinderTracking.map[key]) {
+    return _jcFinderTracking.map[key].oldNew || 'New';
+  }
+
+  /* 2. Fall back to Coordinator Tracking + settlement-period date logic */
   var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
   if (!tracking || !tracking.map || !_settlementPeriod) return '';
 
-  var entry = tracking.map[site.toUpperCase()];
+  var entry = tracking.map[key];
   if (!entry) return '';
 
   var taskDateStr = typeof entry === 'object' ? (entry.taskDate || '') : '';
-  if (!taskDateStr) return 'New'; /* empty Task Date in coordinator sheet → treat as New */
+  if (!taskDateStr) return 'New';
 
   var tDate = new Date(taskDateStr);
   if (isNaN(tDate.getTime())) return '';
@@ -954,8 +969,16 @@ function _blankOldNew(td) {
 
 function _checkSiteExistence() {
   _siteNotFoundIds = {};
-  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
-  if (!tracking || !tracking.map || !tracking.siteCount) return;
+
+  /* Prefer JC Finder file; fall back to Coordinator Tracking */
+  var coordTracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+  var activeMap = null;
+  if (_jcFinderTracking && _jcFinderTracking.map && _jcFinderTracking.siteCount) {
+    activeMap = _jcFinderTracking.map;
+  } else if (coordTracking && coordTracking.map && coordTracking.siteCount) {
+    activeMap = coordTracking.map;
+  }
+  if (!activeMap) return;
 
   var entries = entryType === 'fuel'
     ? (importData.fuel     || [])
@@ -963,12 +986,11 @@ function _checkSiteExistence() {
 
   entries.forEach(function (e) {
     if (!e.siteId) return;
-    /* Split composite IDs the same way lookupJC() does */
     var parts = String(e.siteId).split(/[\/,\-–—\s]+/)
       .map(function (s) { return s.trim(); })
       .filter(function (s) { return s.length > 0; });
     if (!parts.length) return;
-    var anyFound = parts.some(function (s) { return !!tracking.map[s.toUpperCase()]; });
+    var anyFound = parts.some(function (s) { return !!activeMap[s.toUpperCase()]; });
     if (!anyFound) _siteNotFoundIds[e.id] = e.siteId;
   });
 }
@@ -992,8 +1014,15 @@ function _renderWarningsCard() {
   var card = document.getElementById('warningsCard');
   if (!card) return;
 
-  var tracking = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
-  if (!tracking || !tracking.map) { card.classList.add('hidden'); return; }
+  /* Prefer JC Finder file; fall back to Coordinator Tracking */
+  var coordTracking  = (typeof loadCoordTracking === 'function') ? loadCoordTracking() : null;
+  var activeTracking = null;
+  if (_jcFinderTracking && _jcFinderTracking.map && _jcFinderTracking.siteCount) {
+    activeTracking = _jcFinderTracking;
+  } else if (coordTracking && coordTracking.map && coordTracking.siteCount) {
+    activeTracking = coordTracking;
+  }
+  if (!activeTracking) { card.classList.add('hidden'); return; }
 
   /* Collect unique missing sites with their row numbers */
   var entries = entryType === 'fuel' ? (importData.fuel || []) : (importData.expenses || []);
@@ -1012,8 +1041,8 @@ function _renderWarningsCard() {
 
   card.classList.remove('hidden');
 
-  var trackingInfo = tracking.filename
-    ? '<span style="font-size:var(--text-xs);color:#92400e;opacity:.7;margin-left:auto">Checked against: ' + _esc(tracking.filename) + '</span>'
+  var trackingInfo = activeTracking.filename
+    ? '<span style="font-size:var(--text-xs);color:#92400e;opacity:.7;margin-left:auto">Checked against: ' + _esc(activeTracking.filename) + '</span>'
     : '';
 
   var itemsHtml = siteKeys.map(function (site) {
