@@ -18,13 +18,15 @@ document.addEventListener('DOMContentLoaded', function () {
   _renderTrackingStrip();
   _initJCUpload();
 
-  var btnFill  = document.getElementById('btnFillJC');
-  var btnClear = document.getElementById('btnClear');
-  var btnCopy  = document.getElementById('btnCopy');
+  var btnFill   = document.getElementById('btnFillJC');
+  var btnClear  = document.getElementById('btnClear');
+  var btnCopy   = document.getElementById('btnCopy');
+  var btnCopyJC = document.getElementById('btnCopyJC');
 
-  if (btnFill)  btnFill.addEventListener('click',  fillJC);
-  if (btnClear) btnClear.addEventListener('click',  clearAll);
-  if (btnCopy)  btnCopy.addEventListener('click',   copyResults);
+  if (btnFill)   btnFill.addEventListener('click',   fillJC);
+  if (btnClear)  btnClear.addEventListener('click',   clearAll);
+  if (btnCopy)   btnCopy.addEventListener('click',    copyResults);
+  if (btnCopyJC) btnCopyJC.addEventListener('click',  copyJC);
 
   var textarea = document.getElementById('siteInput');
   if (textarea) {
@@ -581,6 +583,46 @@ function copyResults() {
     _fallbackCopy(text, summary);
   }
 }
+
+/* ==========================================================================
+   COPY JC — site + job code in original row order, no old/new grouping
+   ========================================================================== */
+
+function copyJC() {
+  var rows = document.querySelectorAll('#resultsBody tr');
+  if (!rows.length) {
+    showToast('Nothing to copy — run Fill JC first', 'warning');
+    return;
+  }
+
+  var buckets    = {};
+  var groupOrder = [];
+  rows.forEach(function (tr) {
+    var g = tr.dataset.group || '0';
+    if (!buckets[g]) { buckets[g] = []; groupOrder.push(g); }
+    buckets[g].push(tr);
+  });
+
+  var lines = [];
+  groupOrder.forEach(function (g) {
+    var jcs = buckets[g]
+      .map(function (tr) { return tr.dataset.jc || ''; })
+      .filter(function (jc) { return jc.length > 0; });
+    if (jcs.length) lines.push(jcs.join('/'));
+  });
+
+  var text    = lines.join('\n');
+  var summary = lines.length + ' JC' + (lines.length !== 1 ? 's' : '') + ' copied';
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () {
+      showToast(summary, 'success');
+    }).catch(function () { _fallbackCopy(text, summary); });
+  } else {
+    _fallbackCopy(text, summary);
+  }
+}
+
 
 function _fallbackCopy(text, summary) {
   var ta = document.createElement('textarea');
